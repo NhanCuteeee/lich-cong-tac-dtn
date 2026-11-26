@@ -1,0 +1,13 @@
+{
+  "name": "youth-union-schedule-server",
+  "version": "1.0.0",
+  "description": "He thong quan ly lich hop va lich cong tac Doan Truong Cao dang Tien Giang",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "sqlite3": "^5.1.7"
+  }
+}

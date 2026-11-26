@@ -1,0 +1,2772 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đoàn Trường Cao đẳng Tiền Giang - Hệ Thống Lịch Công Tác Tuần</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Be Vietnam Pro', sans-serif; background-color: #f1f5f9; }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white !important; padding: 0 !important; }
+            .print-border { border: 1px solid #000 !important; }
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col">
+
+    <!-- Main Navigation Bar -->
+    <nav class="no-print bg-[#00529C] text-white shadow-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="navigateTab('calendar')">
+                <div class="w-11 h-11 rounded-full bg-white flex items-center justify-center p-0.5 shadow-md border-2 border-yellow-400">
+                    <img src="https://upload.wikimedia.org/wikipedia/vi/0/09/Huy_Hi%E1%BB%87u_%C4%90o%C3%A0n.png?utm_source=vi.wikipedia.org&utm_campaign=index&utm_content=thumbnail_unscaled&_=20210321041456" 
+                         onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Huy_Hi%E1%BB%87u_%C4%90o%C3%A0n.svg/200px-Huy_Hi%E1%BB%87u_%C4%90o%C3%A0n.svg.png'" 
+                         alt="Huy hiệu Đoàn TNCS Hồ Chí Minh" class="w-9 h-9 object-contain hover:scale-105 transition-transform">
+                </div>
+                <div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-[11px] font-bold text-yellow-300 uppercase tracking-wider">ĐOÀN TNCS HỒ CHÍ MINH TRƯỜNG CAO ĐẲNG TIỀN GIANG</span>
+                    </div>
+                    <h1 class="font-extrabold text-base sm:text-lg leading-tight uppercase tracking-wide text-white drop-shadow-sm">HỆ THỐNG QUẢN LÝ LỊCH CÔNG TÁC & LỊCH HỌP TUẦN</h1>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-2">
+                <button onclick="navigateTab('calendar')" id="btnTabCalendar" class="nav-btn px-3 py-1.5 rounded-lg text-sm font-medium transition bg-white/20 text-white flex items-center gap-1.5">
+                    <i class="fa-regular fa-calendar-days"></i> <span class="hidden sm:inline">Lịch tuần</span>
+                </button>
+                <button onclick="navigateTab('register')" id="btnTabRegister" class="hidden nav-btn px-3 py-1.5 rounded-lg text-sm font-medium transition hover:bg-white/10 text-white flex items-center gap-1.5">
+                    <i class="fa-solid fa-calendar-plus"></i> <span class="hidden sm:inline">Đăng ký lịch</span>
+                </button>
+                <button onclick="navigateTab('mySchedules')" id="btnTabMySchedules" class="hidden nav-btn px-3 py-1.5 rounded-lg text-sm font-medium transition hover:bg-white/10 text-white flex items-center gap-1.5 relative">
+                    <i class="fa-solid fa-clock-rotate-left"></i> <span class="hidden sm:inline">Lịch chờ duyệt</span>
+                    <span id="myPendingBadge" class="hidden ml-1 px-1.5 py-0.2 bg-amber-400 text-slate-900 text-xs font-bold rounded-full">0</span>
+                </button>
+                <button onclick="navigateTab('approvals')" id="btnTabApprovals" class="hidden nav-btn px-3 py-1.5 rounded-lg text-sm font-medium transition hover:bg-white/10 text-white flex items-center gap-1.5 relative">
+                    <i class="fa-solid fa-clipboard-check"></i> <span class="hidden sm:inline">Duyệt lịch</span>
+                    <span id="pendingBadge" class="hidden ml-1 px-1.5 py-0.2 bg-amber-400 text-slate-900 text-xs font-bold rounded-full">0</span>
+                </button>
+                <button onclick="navigateTab('admin')" id="btnTabAdmin" class="hidden nav-btn px-3 py-1.5 rounded-lg text-sm font-medium transition hover:bg-white/10 text-white flex items-center gap-1.5">
+                    <i class="fa-solid fa-users-gear"></i> <span class="hidden sm:inline">Quản trị Admin</span>
+                </button>
+
+                <!-- Chuông thông báo lịch họp cá nhân -->
+                <div id="notifBellWrapper" class="hidden relative">
+                    <button onclick="toggleNotificationPanel()" class="relative p-2 text-white hover:bg-white/10 rounded-lg text-base">
+                        <i class="fa-regular fa-bell"></i>
+                        <span id="notifBadge" class="hidden absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-ping"></span>
+                        <span id="notifCountBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full">0</span>
+                    </button>
+
+                    <!-- Popup Thông báo Lịch -->
+                    <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 text-slate-800 text-xs overflow-hidden">
+                        <div class="p-3 bg-blue-50 border-b border-blue-100 flex items-center justify-between">
+                            <span class="font-bold text-blue-900 flex items-center gap-1.5">
+                                <i class="fa-solid fa-bell text-[#00529C]"></i> Thông báo Lịch tuần của bạn
+                            </span>
+                            <button onclick="markAllNotificationsRead()" class="text-[11px] text-blue-600 hover:underline font-semibold">Đã đọc tất cả</button>
+                        </div>
+                        <div id="notifListContainer" class="max-h-72 overflow-y-auto divide-y divide-slate-100 p-1">
+                            <div class="text-center py-6 text-slate-400 italic">Không có thông báo cuộc họp mới</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="h-6 w-px bg-blue-400/40 mx-1"></div>
+
+                <!-- Đăng nhập / Người dùng -->
+                <div id="loginSection">
+                    <button onclick="openLoginModal()" class="bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-3 py-1.5 rounded-lg text-sm shadow transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-right-to-bracket"></i> Đăng nhập
+                    </button>
+                </div>
+
+                <div id="userMenuSection" class="hidden flex items-center gap-2">
+                    <!-- Nút Đổi mật khẩu cá nhân -->
+                    <button onclick="openChangePasswordModal()" title="Đổi mật khẩu tài khoản" class="bg-white/10 hover:bg-white/20 text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1">
+                        <i class="fa-solid fa-key text-amber-300"></i> <span class="hidden sm:inline">Đổi MK</span>
+                    </button>
+                    <!-- Nút Đăng xuất -->
+                    <button onclick="logout()" class="bg-red-500/80 hover:bg-red-600 text-white px-2.5 py-1.5 rounded-lg text-xs font-medium shadow transition flex items-center gap-1">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i> <span class="hidden sm:inline">Đăng xuất</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Subheader Notice Bar -->
+    <div class="no-print bg-blue-50 border-b border-blue-100 py-2 px-4 text-xs sm:text-sm text-blue-900">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-circle-info text-[#00529C]"></i>
+                <span id="accessNoticeText">Chế độ xem công khai: Đoàn viên xem lịch họp đã duyệt mà không cần đăng nhập.</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="window.print()" class="text-[#00529C] hover:underline font-semibold flex items-center gap-1">
+                    <i class="fa-solid fa-print"></i> In lịch công tác tuần này
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex-1 w-full">
+        
+        <!-- ================= TAB 1: CALENDAR VIEW ================= -->
+        <section id="tabCalendar" class="space-y-6">
+            <div class="no-print bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <button onclick="changeWeek(-1)" class="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-100 text-sm font-medium text-slate-700">
+                        <i class="fa-solid fa-chevron-left mr-1"></i> Tuần trước
+                    </button>
+                    <button onclick="goCurrentWeek()" class="px-3 py-1.5 rounded-lg bg-blue-50 text-[#00529C] border border-blue-200 font-semibold text-sm hover:bg-blue-100">
+                        Tuần hiện tại
+                    </button>
+                    <button onclick="changeWeek(1)" class="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-100 text-sm font-medium text-slate-700">
+                        Tuần kế <i class="fa-solid fa-chevron-right ml-1"></i>
+                    </button>
+                    <span id="weekRangeLabel" class="text-sm font-bold text-slate-800 ml-2">Tuần từ ... đến ...</span>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <label class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Lọc theo Ban:</label>
+                    <select id="filterDepartment" onchange="renderCalendar()" class="bg-white border border-slate-300 text-sm rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="all">Tất cả các ban / đơn vị</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-6 border-b border-slate-200 bg-gradient-to-b from-slate-50 to-white">
+                    <div class="flex flex-col sm:flex-row items-center justify-between text-center sm:text-left gap-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center p-0.5 shadow-sm border border-slate-200">
+                                <img src="https://upload.wikimedia.org/wikipedia/vi/0/09/Huy_Hi%E1%BB%87u_%C4%90o%C3%A0n.png?utm_source=vi.wikipedia.org&utm_campaign=index&utm_content=thumbnail_unscaled&_=20210321041456" 
+                                     alt="Huy hiệu Đoàn" class="w-10 h-10 object-contain">
+                            </div>
+                            <div>
+                                <p class="font-bold text-xs uppercase tracking-wider text-slate-700">ĐOÀN TNCS HỒ CHÍ MINH TỈNH ĐỒNG THÁP</p>
+                                <p class="font-extrabold text-sm text-[#00529C] uppercase">BCH ĐOÀN TRƯỜNG CAO ĐẲNG TIỀN GIANG</p>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <p class="font-bold text-sm uppercase tracking-wide text-slate-800">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
+                            <p class="font-semibold text-xs text-slate-600 underline decoration-slate-400 underline-offset-4">Độc lập - Tự do - Hạnh phúc</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-center">
+                        <h2 class="text-xl sm:text-2xl font-black uppercase tracking-tight text-[#00529C]">LỊCH LÀM VIỆC VÀ CÔNG TÁC TUẦN</h2>
+                        <p id="scheduleSubHeader" class="text-xs sm:text-sm text-slate-700 italic font-medium mt-1">Đang tải tuần làm việc...</p>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-blue-50 text-[#00529C] border-b border-blue-200 text-xs font-bold uppercase tracking-wider">
+                                <th class="p-3 w-32 border-r border-blue-100">Thứ / Ngày</th>
+                                <th class="p-3 w-28 border-r border-blue-100">Thời gian</th>
+                                <th class="p-3 border-r border-blue-100">Nội dung công việc / Cuộc họp</th>
+                                <th class="p-3 w-48 border-r border-blue-100">Địa điểm / Phòng họp</th>
+                                <th class="p-3 w-56 border-r border-blue-100">Chủ trì & Triệu tập</th>
+                                <th class="p-3 w-36">Ban chuẩn bị</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scheduleTableBody" class="divide-y divide-slate-200">
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="p-6 border-t border-slate-200 bg-slate-50 flex justify-between items-start text-xs sm:text-sm">
+                    <div class="space-y-1 text-slate-600">
+                        <p class="font-bold text-slate-700">Nơi nhận:</p>
+                        <p>- Ban Thường vụ, BCH Đoàn trường;</p>
+                        <p>- Các Đoàn khoa, Chi đoàn trực thuộc;</p>
+                        <p>- Cán bộ, Đoàn viên toàn trường;</p>
+                        <p>- Lưu: VP Đoàn./.</p>
+                    </div>
+                    <div class="text-center space-y-1">
+                        <p id="footerSigningDate" class="italic text-slate-600">Ngày ... tháng ... năm 2026</p>
+                        <p class="font-bold text-slate-800 uppercase tracking-wider">TM. BAN THƯỜNG VỤ ĐOÀN TRƯỜNG</p>
+                        <p id="footerApproverTitle" class="font-extrabold text-[#00529C]">BÍ THƯ</p>
+                        <div class="h-16 flex items-center justify-center">
+                            <span class="text-xs text-slate-400 italic">(Đã ký & phê duyệt số hóa)</span>
+                        </div>
+                        <p id="footerApproverName" class="font-semibold text-slate-800">Nguyễn Văn An</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+                <!-- ================= TAB: LỊCH CHỜ DUYỆT (DÀNH CHO NGƯỜI ĐĂNG KÝ THEO DÕI) ================= -->
+        <section id="tabMySchedules" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4 mb-6">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <span>Theo Dõi Lịch Đã Đăng Ký & Trạng Thái Duyệt</span>
+                            <span class="text-xs bg-blue-100 text-[#00529C] px-2 py-0.5 rounded font-semibold">Cá nhân</span>
+                        </h2>
+                        <p class="text-xs text-slate-500">Xem tiến độ phê duyệt các cuộc họp do bạn đăng ký (Đang chờ duyệt, Đã duyệt ban hành hoặc Yêu cầu chỉnh sửa).</p>
+                    </div>
+                    <button onclick="loadMySchedulesList()" class="text-xs px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold flex items-center gap-1">
+                        <i class="fa-solid fa-rotate"></i> Làm mới danh sách
+                    </button>
+                </div>
+
+                <div id="mySchedulesListContainer" class="space-y-4">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </section>
+
+<!-- ================= TAB 2: REGISTER SCHEDULE ================= -->
+        <section id="tabRegister" class="hidden space-y-6 max-w-3xl mx-auto">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div class="flex items-center gap-3 border-b border-slate-200 pb-4 mb-6">
+                    <div class="w-10 h-10 rounded-lg bg-blue-100 text-[#00529C] flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-calendar-plus"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800">Đăng Ký Lịch Họp / Hoạt Động Tuần</h2>
+                        <p class="text-xs text-slate-500">Lịch đăng lên sẽ được gửi tới Bí thư hoặc Phó Bí thư phụ trách xét duyệt trước khi ban hành.</p>
+                    </div>
+                </div>
+
+                <form id="formRegisterSchedule" onsubmit="handleCreateSchedule(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Tiêu đề / Nội dung cuộc họp (*)</label>
+                        <input type="text" id="regTitle" required placeholder="VD: Họp Ban Thường vụ chuẩn bị Tháng Thanh niên..." 
+                               class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Ngày diễn ra (*)</label>
+                            <input type="date" id="regDate" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Giờ bắt đầu (*)</label>
+                            <input type="time" id="regStartTime" value="08:00" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Giờ kết thúc (*)</label>
+                            <input type="time" id="regEndTime" value="10:00" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Địa điểm / Phòng họp (*)</label>
+                                <span onclick="switchAdminSubtab('locs'); navigateTab('admin');" class="text-[11px] text-blue-600 hover:underline cursor-pointer">+ Quản lý phòng</span>
+                            </div>
+                            <select id="regLocation" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                Ban đăng ký / Bộ phận chủ trì (*) <span class="text-[10px] text-slate-400 font-normal">(Cố định theo tài khoản)</span>
+                            </label>
+                            <div class="relative">
+                                <input type="text" id="regDepartment" readonly 
+                                       class="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-sm font-bold text-slate-700 cursor-not-allowed">
+                                <i class="fa-solid fa-lock absolute right-3 top-3 text-slate-400 text-xs"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CHỦ TRÌ: CHỌN TÊN VÀ CHỨC VỤ -->
+                    <div class="bg-blue-50/60 p-3.5 rounded-xl border border-blue-200/80 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <label class="block text-xs font-bold text-blue-900 uppercase tracking-wider">
+                                <i class="fa-solid fa-user-tie mr-1 text-[#00529C]"></i> Người chủ trì cuộc họp (*)
+                            </label>
+                            <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-slate-600 hover:text-slate-800">
+                                <input type="checkbox" id="chkCustomChairperson" onchange="toggleCustomChairperson(this.checked)" class="rounded text-blue-600">
+                                <span>Nhập tay tự do (nếu là lãnh đạo ngoài)</span>
+                            </label>
+                        </div>
+
+                        <div id="selectChairpersonMode" class="space-y-2">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">1. Chọn Cán bộ chủ trì:</label>
+                                    <select id="selectLeaderUser" onchange="onSelectLeaderChange()" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none">
+                                        <option value="">-- Bấm để chọn người chủ trì --</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">2. Chức vụ chủ trì:</label>
+                                    <select id="selectLeaderTitle" onchange="updateGeneratedChairperson()" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none">
+                                        <option value="">-- Giữ chức vụ theo hồ sơ cán bộ --</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="text-xs text-slate-600 flex items-center gap-1.5 bg-white px-3 py-2 rounded-lg border border-slate-200">
+                                <span class="font-semibold text-slate-500">Hiển thị trên lịch:</span>
+                                <span id="previewChairperson" class="font-bold text-[#00529C] italic">Chưa chọn người chủ trì</span>
+                            </div>
+                        </div>
+
+                        <div id="customChairpersonMode" class="hidden">
+                            <input type="text" id="customChairpersonInput" placeholder="VD: Đ/c Trần Văn X - Bí thư Đảng ủy cơ quan..." 
+                                   class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                    </div>
+
+                    <!-- THÀNH PHẦN THAM DỰ DẠNG CÂY THƯ MỤC THEO NHÓM -->
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
+                            <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-folder-tree text-[#00529C]"></i> Thành phần tham dự / Triệu tập (*)
+                            </label>
+                            <div class="flex items-center gap-3 text-[11px]">
+                                <button type="button" onclick="expandCollapseAllTrees(true)" class="text-blue-600 hover:underline flex items-center gap-1 font-medium">
+                                    <i class="fa-regular fa-folder-open"></i> Mở tất cả
+                                </button>
+                                <span class="text-slate-300">|</span>
+                                <button type="button" onclick="expandCollapseAllTrees(false)" class="text-slate-500 hover:underline flex items-center gap-1 font-medium">
+                                    <i class="fa-regular fa-folder"></i> Thu gọn
+                                </button>
+                                <span class="text-slate-300">|</span>
+                                <span onclick="switchAdminSubtab('groups'); navigateTab('admin');" class="text-amber-700 hover:underline cursor-pointer font-semibold flex items-center gap-1">
+                                    <i class="fa-solid fa-gear"></i> Quản lý Nhóm
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- KHUNG CÂY THƯ MỤC CÁC NHÓM & CÁN BỘ -->
+                        <div>
+                            <div class="text-xs text-slate-500 mb-1 flex items-center justify-between">
+                                <span><i class="fa-solid fa-circle-info text-blue-500 mr-1"></i>Tích vào thư mục nhóm để chọn toàn bộ nhóm, hoặc bấm vào tên nhóm để mở ra chọn từng người:</span>
+                            </div>
+                            <div id="attendeesTreeContainer" class="bg-white border border-slate-300 rounded-lg p-2.5 max-h-64 overflow-y-auto space-y-2 text-xs">
+                                <!-- Rendered dynamically as Tree View with Group Folders & Members -->
+                            </div>
+                        </div>
+
+                        <!-- DANH SÁCH CÁN BỘ ĐÃ CHỌN THAM DỰ DƯỚI DẠNG THẺ -->
+                        <div class="bg-white p-3 rounded-lg border border-blue-200">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-xs font-bold text-blue-900 flex items-center gap-1">
+                                    <i class="fa-solid fa-user-check text-[#00529C]"></i> Cán bộ đã chọn tham dự (<span id="selectedCountBadge">0</span> người):
+                                </span>
+                                <button type="button" onclick="clearAllSelectedAttendees()" class="text-[11px] text-red-500 hover:underline font-semibold">
+                                    Bỏ chọn tất cả
+                                </button>
+                            </div>
+                            <div id="selectedAttendeesTags" class="flex flex-wrap gap-1.5 min-h-[28px] items-center">
+                                <span class="text-xs text-slate-400 italic">Chưa có cán bộ nào được chọn</span>
+                            </div>
+                        </div>
+
+                        <!-- GÕ THÊM THÀNH PHẦN KHÁC NGOÀI DANH SÁCH -->
+                        <div>
+                            <span class="text-xs font-semibold text-slate-700 block mb-1">Thành phần khác ngoài danh sách cán bộ (nếu có):</span>
+                            <input type="text" id="customAttendeesInput" oninput="renderAttendeesPreview()" 
+                                   placeholder="VD: Toàn thể đoàn viên các Chi đoàn, khách mời, Ban Giám hiệu..." 
+                                   class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+
+                        <!-- XEM TRƯỚC TỔNG HỢP HIỂN THỊ TRÊN LỊCH -->
+                        <div class="text-xs bg-blue-50/80 p-2.5 rounded-lg border border-blue-200 text-slate-700">
+                            <div class="font-bold text-[#00529C] mb-0.5">Nội dung thành phần sẽ in/hiển thị trên lịch tuần:</div>
+                            <div id="combinedAttendeesPreview" class="italic text-slate-600">Chưa chọn hoặc nhập thành phần tham dự</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Ghi chú / Yêu cầu tài liệu / Trang phục</label>
+                        <textarea id="regNote" rows="2" placeholder="VD: Yêu cầu mang theo sổ tay công tác, mặc áo Thanh niên Việt Nam..." 
+                                  class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+                    </div>
+
+                    <div id="regAlert" class="hidden p-3 rounded-lg text-sm font-medium"></div>
+
+                    <div class="flex justify-end gap-3 pt-3 border-t border-slate-200">
+                        <button type="button" onclick="navigateTab('calendar')" class="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium hover:bg-slate-50">Hủy</button>
+                        <button type="submit" class="px-5 py-2 bg-[#00529C] hover:bg-blue-700 text-white font-bold rounded-lg text-sm shadow">
+                            <i class="fa-solid fa-paper-plane mr-1.5"></i> Gửi đăng ký phê duyệt
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- ================= TAB 3: APPROVALS ================= -->
+        <section id="tabApprovals" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4 mb-6">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <span>Phê Duyệt Lịch Công Tác Tuần</span>
+                            <span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-semibold">Quyền Thường trực Đoàn</span>
+                        </h2>
+                        <p class="text-xs text-slate-500">Hệ thống tự động rà soát trùng lịch và gửi thông báo tới người chủ trì, tham dự ngay khi duyệt.</p>
+                    </div>
+                    <button onclick="loadPendingSchedules()" class="text-xs px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold flex items-center gap-1">
+                        <i class="fa-solid fa-rotate"></i> Làm mới danh sách
+                    </button>
+                </div>
+
+                <div id="approvalsList" class="space-y-4">
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 4: ADMIN MANAGEMENT ================= -->
+        <section id="tabAdmin" class="hidden space-y-6">
+            <div class="flex border-b border-slate-200 space-x-3 overflow-x-auto pb-1">
+                <button onclick="switchAdminSubtab('users')" id="subtabBtnUsers" class="pb-2 border-b-2 border-[#00529C] text-[#00529C] font-bold text-xs sm:text-sm whitespace-nowrap">
+                    <i class="fa-solid fa-users mr-1"></i> Cán bộ & Phân quyền
+                </button>
+                <button onclick="switchAdminSubtab('locs')" id="subtabBtnLocs" class="pb-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-semibold text-xs sm:text-sm whitespace-nowrap">
+                    <i class="fa-solid fa-location-dot mr-1"></i> Địa điểm / Phòng họp
+                </button>
+                <button onclick="switchAdminSubtab('groups')" id="subtabBtnGroups" class="pb-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-semibold text-xs sm:text-sm whitespace-nowrap">
+                    <i class="fa-solid fa-layer-group mr-1"></i> Nhóm triệu tập
+                </button>
+                <button onclick="switchAdminSubtab('depts')" id="subtabBtnDepts" class="pb-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-semibold text-xs sm:text-sm whitespace-nowrap">
+                    <i class="fa-solid fa-sitemap mr-1"></i> Tên Ban / Đơn vị
+                </button>
+                <button onclick="switchAdminSubtab('titles')" id="subtabBtnTitles" class="pb-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-semibold text-xs sm:text-sm whitespace-nowrap">
+                    <i class="fa-solid fa-id-badge mr-1"></i> Tên Chức vụ
+                </button>
+            </div>
+
+            <!-- SUBPANEL 1: USERS -->
+            <div id="adminPanelUsers" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 h-fit">
+                    <h3 class="text-base font-bold text-slate-800 flex items-center gap-2 mb-4">
+                        <i class="fa-solid fa-user-plus text-[#00529C]"></i> Thêm Cán bộ Đoàn
+                    </h3>
+                    <form onsubmit="handleCreateUser(event)" class="space-y-3.5">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Tên đăng nhập (*)</label>
+                            <input type="text" id="newUsername" required placeholder="VD: canbo1, vanphong..." class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Mật khẩu ban đầu (*)</label>
+                            <input type="password" id="newPassword" value="123456" required class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Họ và tên (*)</label>
+                            <input type="text" id="newFullName" required placeholder="VD: Nguyễn Văn A..." class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Chức vụ (*)</label>
+                            <select id="newTitle" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium">
+                                <option value="">-- Bấm chọn Chức vụ --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Thuộc Ban / Đơn vị (*)</label>
+                            <select id="newDepartment" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium">
+                                <option value="">-- Bấm chọn Ban / Đơn vị --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Phân vai trò công tác (*)</label>
+                            <select id="newRoleSelect" onchange="onRoleSelectChange(this.value)" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white font-semibold text-slate-800">
+                                <option value="staff" selected>Đăng ký lịch (Dành cho Trưởng / Phó các Ban)</option>
+                                <option value="approver">Duyệt lịch (Dành cho Bí thư / Phó Bí thư)</option>
+                                <option value="admin">Quản trị viên (Toàn quyền Admin)</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-2 pt-1 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                            <input type="checkbox" id="newCanApprove" class="w-4 h-4 text-emerald-600 rounded">
+                            <div>
+                                <label for="newCanApprove" class="text-xs font-bold text-slate-700 cursor-pointer">Cấp quyền duyệt lịch công tác tuần</label>
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full py-2.5 bg-[#00529C] hover:bg-blue-700 text-white font-bold rounded-lg text-sm shadow">
+                            Tạo tài khoản cán bộ
+                        </button>
+                    </form>
+                </div>
+
+                <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800">Danh sách Cán bộ & Quản lý</h3>
+                            <p class="text-xs text-slate-500">Chỉnh sửa thông tin, reset mật khẩu về 123456 mà không làm mất lịch đã tạo.</p>
+                        </div>
+                        <button onclick="loadUsersList()" class="text-xs px-2.5 py-1.5 border rounded hover:bg-slate-50">
+                            <i class="fa-solid fa-rotate"></i>
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-600 text-xs font-bold uppercase border-b">
+                                    <th class="p-2.5">Họ tên & Chức vụ</th>
+                                    <th class="p-2.5">Ban / Bộ phận</th>
+                                    <th class="p-2.5">Tài khoản</th>
+                                    <th class="p-2.5 text-center">Vai trò</th>
+                                    <th class="p-2.5 text-center">Quyền duyệt</th>
+                                    <th class="p-2.5 text-right">Quản lý</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userTableBody" class="divide-y divide-slate-200 text-xs sm:text-sm">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUBPANEL 2: LOCATIONS -->
+            <div id="adminPanelLocs" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 h-fit">
+                    <h3 class="text-base font-bold text-slate-800 flex items-center gap-2 mb-3">
+                        <i class="fa-solid fa-plus-circle text-blue-600"></i> Thêm Địa điểm / Phòng họp
+                    </h3>
+                    <form onsubmit="handleCreateLocation(event)" class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Tên Địa điểm / Phòng họp (*)</label>
+                            <input type="text" id="newLocName" required placeholder="VD: Phòng họp số 3, Sân đa năng..." class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <button type="submit" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-sm shadow">
+                            Thêm Địa điểm
+                        </button>
+                    </form>
+                </div>
+
+                <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-base font-bold text-slate-800 mb-1">Danh sách Địa điểm / Phòng họp</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-600 text-xs font-bold uppercase border-b">
+                                    <th class="p-2.5 w-16">STT</th>
+                                    <th class="p-2.5">Tên Địa điểm / Phòng họp</th>
+                                    <th class="p-2.5 text-right w-24">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="locTableBody" class="divide-y divide-slate-200">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUBPANEL 3: ATTENDEE GROUPS -->
+            <div id="adminPanelGroups" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 h-fit">
+                    <h3 class="text-base font-bold text-slate-800 flex items-center gap-2 mb-3">
+                        <i class="fa-solid fa-plus-circle text-amber-600"></i> Tạo Nhóm Triệu Tập Mới
+                    </h3>
+                    <form onsubmit="handleCreateGroup(event)" class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Tên Nhóm (*)</label>
+                            <input type="text" id="newGroupName" required placeholder="VD: Ban Thường vụ Đoàn, BCH..." class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-amber-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Chọn Cán bộ thuộc nhóm:</label>
+                            <div id="groupMembersCheckboxes" class="max-h-48 overflow-y-auto p-2 border rounded-lg bg-slate-50 space-y-1.5 text-xs">
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-sm shadow">
+                            Lưu Nhóm Mới
+                        </button>
+                    </form>
+                </div>
+
+                <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-base font-bold text-slate-800 mb-1">Danh sách Nhóm Triệu Tập đang có</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-600 text-xs font-bold uppercase border-b">
+                                    <th class="p-2.5 w-16">STT</th>
+                                    <th class="p-2.5">Tên Nhóm</th>
+                                    <th class="p-2.5">Thành viên trong nhóm</th>
+                                    <th class="p-2.5 text-right w-24">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="groupTableBody" class="divide-y divide-slate-200">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUBPANEL 4: DEPARTMENTS -->
+            <div id="adminPanelDepts" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 h-fit">
+                    <h3 class="text-base font-bold text-slate-800 flex items-center gap-2 mb-3">
+                        <i class="fa-solid fa-plus-circle text-emerald-600"></i> Thêm Ban / Đơn vị mới
+                    </h3>
+                    <form onsubmit="handleCreateDepartment(event)" class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Tên Ban / Đơn vị (*)</label>
+                            <input type="text" id="newDeptName" required placeholder="VD: Ban Đồng hành, Ban Thiếu nhi..." class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
+                        </div>
+                        <button type="submit" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-sm shadow">
+                            Thêm Ban mới
+                        </button>
+                    </form>
+                </div>
+
+                <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-base font-bold text-slate-800 mb-1">Danh sách Ban / Đơn vị</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-600 text-xs font-bold uppercase border-b">
+                                    <th class="p-2.5 w-16">STT</th>
+                                    <th class="p-2.5">Tên Ban / Đơn vị</th>
+                                    <th class="p-2.5 text-right w-24">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="deptTableBody" class="divide-y divide-slate-200">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUBPANEL 5: TITLES -->
+            <div id="adminPanelTitles" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 h-fit">
+                    <h3 class="text-base font-bold text-slate-800 flex items-center gap-2 mb-3">
+                        <i class="fa-solid fa-plus-circle text-blue-600"></i> Thêm Chức vụ mới
+                    </h3>
+                    <form onsubmit="handleCreateTitle(event)" class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Tên Chức vụ (*)</label>
+                            <input type="text" id="newTitleName" required placeholder="VD: Bí thư Chi đoàn, Phó Bí thư..." class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <button type="submit" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-sm shadow">
+                            Thêm Chức vụ mới
+                        </button>
+                    </form>
+                </div>
+
+                <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-base font-bold text-slate-800 mb-1">Danh sách Chức vụ</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-600 text-xs font-bold uppercase border-b">
+                                    <th class="p-2.5 w-16">STT</th>
+                                    <th class="p-2.5">Tên Chức vụ</th>
+                                    <th class="p-2.5 text-right w-24">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="titleTableBody" class="divide-y divide-slate-200">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- MODAL 1: LOGIN (ĐÃ BỎ DÒNG MẬT KHẨU MẶC ĐỊNH) -->
+    <div id="loginModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 relative">
+            <button onclick="closeLoginModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="text-center mb-6">
+                <div class="w-12 h-12 bg-blue-100 text-[#00529C] rounded-full flex items-center justify-center mx-auto mb-2 text-xl font-bold">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800">Đăng Nhập Cán Bộ Đoàn</h3>
+                <p class="text-xs text-slate-500">Dành cho Thường trực Đoàn & Trưởng/Phó các Ban</p>
+            </div>
+
+            <form onsubmit="handleManualLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tài khoản</label>
+                    <input type="text" id="loginUsername" required placeholder="Nhập tên đăng nhập..." class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mật khẩu</label>
+                    <input type="password" id="loginPassword" required placeholder="Nhập mật khẩu..." class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div id="loginError" class="hidden text-xs text-red-600 bg-red-50 p-2.5 rounded border border-red-200"></div>
+                <button type="submit" class="w-full py-2.5 bg-[#00529C] hover:bg-blue-700 text-white font-bold rounded-lg text-sm shadow">
+                    Đăng nhập hệ thống
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: USER SELF CHANGE PASSWORD -->
+    <div id="changePasswordModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 relative">
+            <button onclick="closeChangePasswordModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="text-center mb-5">
+                <div class="w-11 h-11 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-2 text-lg">
+                    <i class="fa-solid fa-key"></i>
+                </div>
+                <h3 class="text-base font-bold text-slate-800">Đổi Mật Khẩu Cá Nhân</h3>
+                <p class="text-xs text-slate-500">Bảo vệ tài khoản công tác của đồng chí</p>
+            </div>
+
+            <form onsubmit="handleChangePasswordSubmit(event)" class="space-y-3.5">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Mật khẩu hiện tại (*)</label>
+                    <input type="password" id="pwdCurrent" required placeholder="Nhập mật khẩu đang dùng..." class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Mật khẩu mới (*)</label>
+                    <input type="password" id="pwdNew" required placeholder="Nhập mật khẩu mới..." class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Xác nhận mật khẩu mới (*)</label>
+                    <input type="password" id="pwdConfirm" required placeholder="Nhập lại mật khẩu mới..." class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div id="pwdAlert" class="hidden text-xs p-2.5 rounded border"></div>
+                <button type="submit" class="w-full py-2.5 bg-[#00529C] hover:bg-blue-700 text-white font-bold rounded-lg text-sm shadow">
+                    Lưu mật khẩu mới
+                </button>
+            </form>
+        </div>
+    </div>
+
+        <!-- MODAL CHỈNH SỬA & THÊM THÀNH VIÊN VÀO NHÓM -->
+    <div id="editGroupModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 relative">
+            <button onclick="closeEditGroupModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="mb-4 pb-2 border-b">
+                <h3 class="text-base font-bold text-slate-800 flex items-center gap-1.5">
+                    <i class="fa-solid fa-user-plus text-amber-600"></i> Thêm Thành Viên Vào Nhóm Triệu Tập
+                </h3>
+                <p class="text-xs text-slate-500">Tích chọn cán bộ để bổ sung thêm vào nhóm</p>
+            </div>
+
+            <form onsubmit="handleEditGroupSubmit(event)" class="space-y-3.5">
+                <input type="hidden" id="editGroupId">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Tên Nhóm (*)</label>
+                    <input type="text" id="editGroupName" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+                </div>
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-xs font-bold text-slate-600 uppercase">Danh sách Cán bộ:</label>
+                        <span class="text-[11px] text-slate-400">Tích để thêm / Bỏ tích để gỡ</span>
+                    </div>
+                    <div id="editGroupMembersContainer" class="max-h-56 overflow-y-auto p-2.5 border rounded-lg bg-slate-50 space-y-1.5 text-xs">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 pt-2 border-t">
+                    <button type="button" onclick="closeEditGroupModal()" class="px-3 py-1.5 border rounded text-xs font-medium">Hủy</button>
+                    <button type="submit" class="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded text-xs shadow">Lưu cập nhật nhóm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+<!-- MODAL 3: ADMIN EDIT USER (SỬA HỌ TÊN, CHỨC VỤ, BAN, VAI TRÒ) -->
+    <div id="editUserModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 relative">
+            <button onclick="closeEditUserModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="mb-4 pb-2 border-b">
+                <h3 class="text-base font-bold text-slate-800">Chỉnh Sửa Thông Tin Cán Bộ</h3>
+                <p class="text-xs text-slate-500">Cập nhật hồ sơ cán bộ mà không làm mất lịch họp liên quan</p>
+            </div>
+
+            <form onsubmit="handleEditUserSubmit(event)" class="space-y-3.5">
+                <input type="hidden" id="editUserId">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Tài khoản (Cố định)</label>
+                    <input type="text" id="editUsername" readonly class="w-full px-3 py-2 bg-slate-100 border rounded-lg text-sm font-mono text-slate-600 cursor-not-allowed">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Họ và tên (*)</label>
+                    <input type="text" id="editFullName" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Chức vụ (*)</label>
+                    <select id="editTitle" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Thuộc Ban / Đơn vị (*)</label>
+                    <select id="editDepartment" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Phân vai trò công tác (*)</label>
+                    <select id="editRole" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white font-semibold">
+                        <option value="staff">Đăng ký lịch (Trưởng / Phó các Ban)</option>
+                        <option value="approver">Duyệt lịch (Bí thư / Phó Bí thư)</option>
+                        <option value="admin">Quản trị viên (Admin)</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-2 pt-1 bg-slate-50 p-2.5 rounded-lg border">
+                    <input type="checkbox" id="editCanApprove" class="w-4 h-4 text-emerald-600 rounded">
+                    <label for="editCanApprove" class="text-xs font-bold text-slate-700 cursor-pointer">Cấp quyền duyệt lịch công tác tuần</label>
+                </div>
+                <div class="flex justify-end gap-2 pt-2 border-t">
+                    <button type="button" onclick="closeEditUserModal()" class="px-3 py-1.5 border rounded text-xs">Hủy</button>
+                    <button type="submit" class="px-4 py-1.5 bg-[#00529C] text-white font-bold rounded text-xs shadow">Lưu cập nhật</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 4: REJECT MODAL -->
+    <div id="rejectModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-xl p-6 relative">
+            <h3 class="text-base font-bold text-slate-800 mb-2">Yêu Cầu Chỉnh Sửa / Từ Chối Lịch</h3>
+            <p class="text-xs text-slate-500 mb-4">Vui lòng ghi rõ lý do để Ban đăng ký cập nhật lại (ví dụ: trùng lịch người chủ trì, trùng phòng họp...).</p>
+            <textarea id="rejectReasonInput" rows="3" placeholder="Nhập lý do phản hồi..." class="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-red-400"></textarea>
+            <input type="hidden" id="rejectScheduleId">
+            <div class="flex justify-end gap-2 mt-4">
+                <button onclick="closeRejectModal()" class="px-3 py-1.5 border rounded text-xs">Hủy</button>
+                <button onclick="confirmRejectSchedule()" class="px-3 py-1.5 bg-red-600 text-white font-bold rounded text-xs">Xác nhận gửi lại Ban</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let currentUser = null;
+        let currentWeekOffset = 0;
+        let departmentsList = [];
+        let titlesList = [];
+        let locationsList = [];
+        let groupsList = [];
+        let usersList = [];
+        let userNotifications = [];
+
+        window.onload = async function() {
+            setInitialDate();
+            await loadDepartments();
+            await loadTitles();
+            await loadLocations();
+            await loadGroups();
+            await loadAllUsers();
+            renderCalendar();
+        };
+
+        function setInitialDate() {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const dateInput = document.getElementById('regDate');
+            if (dateInput) {
+                dateInput.value = `${yyyy}-${mm}-${dd}`;
+                dateInput.min = `${yyyy}-${mm}-${dd}`; // Chặn chọn ngày trong quá khứ
+            }
+        }
+
+        async function loadDepartments() {
+            try {
+                const res = await fetch('/api/departments');
+                departmentsList = await res.json();
+                populateDeptSelects();
+                renderDeptTable();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function loadTitles() {
+            try {
+                const res = await fetch('/api/titles');
+                titlesList = await res.json();
+                populateTitleSelects();
+                renderTitleTable();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function loadLocations() {
+            try {
+                const res = await fetch('/api/locations');
+                locationsList = await res.json();
+                populateLocationSelects();
+                renderLocationTable();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function loadGroups() {
+            try {
+                const res = await fetch('/api/groups');
+                groupsList = await res.json();
+                renderAttendeesTreeView();
+                renderGroupTable();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function loadAllUsers() {
+            try {
+                const res = await fetch('/api/users');
+                usersList = await res.json();
+                populateLeaderUsersSelect();
+                renderAttendeesTreeView();
+                populateGroupMemberCheckboxes();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function populateLocationSelects() {
+            const regLoc = document.getElementById('regLocation');
+            const cur = regLoc.value;
+            regLoc.innerHTML = '';
+            locationsList.forEach(l => {
+                const opt = document.createElement('option');
+                opt.value = l.name;
+                opt.textContent = l.name;
+                regLoc.appendChild(opt);
+            });
+            if (cur) regLoc.value = cur;
+        }
+
+        function populateDeptSelects() {
+            const filter = document.getElementById('filterDepartment');
+            const curFilterVal = filter.value;
+            filter.innerHTML = '<option value="all">Tất cả các ban / đơn vị</option>';
+            departmentsList.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.name;
+                opt.textContent = d.name;
+                filter.appendChild(opt);
+            });
+            if (curFilterVal) filter.value = curFilterVal;
+
+            const userDeptSel = document.getElementById('newDepartment');
+            userDeptSel.innerHTML = '<option value="">-- Bấm chọn Ban / Đơn vị --</option>';
+            departmentsList.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.name;
+                opt.textContent = d.name;
+                userDeptSel.appendChild(opt);
+            });
+
+            const editDeptSel = document.getElementById('editDepartment');
+            if (editDeptSel) {
+                editDeptSel.innerHTML = '';
+                departmentsList.forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d.name;
+                    opt.textContent = d.name;
+                    editDeptSel.appendChild(opt);
+                });
+            }
+
+            if (currentUser && currentUser.department) {
+                document.getElementById('regDepartment').value = currentUser.department;
+            }
+        }
+
+        function populateTitleSelects() {
+            const titleSel = document.getElementById('newTitle');
+            titleSel.innerHTML = '<option value="">-- Bấm chọn Chức vụ --</option>';
+            titlesList.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t.name;
+                opt.textContent = t.name;
+                titleSel.appendChild(opt);
+            });
+
+            const editTitleSel = document.getElementById('editTitle');
+            if (editTitleSel) {
+                editTitleSel.innerHTML = '';
+                titlesList.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t.name;
+                    opt.textContent = t.name;
+                    editTitleSel.appendChild(opt);
+                });
+            }
+
+            const leaderTitleSel = document.getElementById('selectLeaderTitle');
+            leaderTitleSel.innerHTML = '<option value="">-- Giữ chức vụ theo hồ sơ cán bộ --</option>';
+            titlesList.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t.name;
+                opt.textContent = t.name;
+                leaderTitleSel.appendChild(opt);
+            });
+        }
+
+        function populateLeaderUsersSelect() {
+            const selectEl = document.getElementById('selectLeaderUser');
+            selectEl.innerHTML = '<option value="">-- Bấm để chọn người chủ trì --</option>';
+
+            usersList.forEach(u => {
+                if (u.username === 'admin') return;
+                const opt = document.createElement('option');
+                opt.value = JSON.stringify({ name: u.full_name, title: u.title || 'Cán bộ', dept: u.department });
+                opt.textContent = `Đ/c ${u.full_name} (${u.title || 'Cán bộ'} - ${u.department})`;
+                selectEl.appendChild(opt);
+            });
+        }
+
+        function onSelectLeaderChange() {
+            const selVal = document.getElementById('selectLeaderUser').value;
+            if (!selVal) {
+                document.getElementById('previewChairperson').innerText = 'Chưa chọn người chủ trì';
+                return;
+            }
+            const userObj = JSON.parse(selVal);
+            const leaderTitleSel = document.getElementById('selectLeaderTitle');
+            if (userObj.title) {
+                leaderTitleSel.value = userObj.title;
+            }
+            updateGeneratedChairperson();
+        }
+
+        function updateGeneratedChairperson() {
+            const selVal = document.getElementById('selectLeaderUser').value;
+            if (!selVal) {
+                document.getElementById('previewChairperson').innerText = 'Chưa chọn người chủ trì';
+                return;
+            }
+            const userObj = JSON.parse(selVal);
+            const overrideTitle = document.getElementById('selectLeaderTitle').value;
+            const finalTitle = overrideTitle || userObj.title || 'Cán bộ Đoàn';
+            
+            const formatted = `Đ/c ${userObj.name} - ${finalTitle}`;
+            document.getElementById('previewChairperson').innerText = formatted;
+        }
+
+        function toggleCustomChairperson(isCustom) {
+            const selectMode = document.getElementById('selectChairpersonMode');
+            const customMode = document.getElementById('customChairpersonMode');
+
+            if (isCustom) {
+                selectMode.classList.add('hidden');
+                customMode.classList.remove('hidden');
+                document.getElementById('customChairpersonInput').focus();
+            } else {
+                selectMode.classList.remove('hidden');
+                customMode.classList.add('hidden');
+            }
+        }
+
+        function getFinalChairpersonValue() {
+            const isCustom = document.getElementById('chkCustomChairperson').checked;
+            if (isCustom) {
+                return document.getElementById('customChairpersonInput').value.trim();
+            }
+            const selVal = document.getElementById('selectLeaderUser').value;
+            if (!selVal) return '';
+            const userObj = JSON.parse(selVal);
+            const overrideTitle = document.getElementById('selectLeaderTitle').value;
+            const finalTitle = overrideTitle || userObj.title || 'Cán bộ Đoàn';
+            return `Đ/c ${userObj.name} - ${finalTitle}`;
+        }
+
+        function getRawLeaderName() {
+            const isCustom = document.getElementById('chkCustomChairperson').checked;
+            if (isCustom) {
+                let txt = document.getElementById('customChairpersonInput').value.trim();
+                txt = txt.replace(/^Đ\/c\s+/i, '');
+                return txt.split('-')[0].trim();
+            }
+            const selVal = document.getElementById('selectLeaderUser').value;
+            if (!selVal) return '';
+            const userObj = JSON.parse(selVal);
+            return userObj.name;
+        }
+
+        // ================= CÂY THƯ MỤC THÀNH PHẦN THAM DỰ THEO NHÓM =================
+        let expandedGroups = {};
+
+        function renderAttendeesTreeView() {
+            const container = document.getElementById('attendeesTreeContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            if (!usersList || usersList.length === 0) {
+                container.innerHTML = '<div class="text-slate-400 italic py-2 text-center">Chưa có dữ liệu cán bộ.</div>';
+                return;
+            }
+
+            const activeUsers = usersList.filter(u => u.username !== 'admin');
+            const isRootExpanded = expandedGroups['root'] !== false; // Mặc định mở thư mục gốc
+
+            // THƯ MỤC GỐC CHA: CÁN BỘ ĐOÀN (Chứa tất cả các nhóm con bên trong)
+            const rootFolderDiv = document.createElement('div');
+            rootFolderDiv.className = 'border-2 border-[#00529C]/40 rounded-xl overflow-hidden bg-white shadow-sm';
+
+            // Header thư mục gốc: CÁN BỘ ĐOÀN
+            const rootHeader = document.createElement('div');
+            rootHeader.className = 'flex items-center justify-between p-2.5 bg-blue-50/90 hover:bg-blue-100/80 cursor-pointer select-none border-b border-blue-200';
+            rootHeader.innerHTML = `
+                <div class="flex items-center gap-2 flex-1">
+                    <button type="button" onclick="toggleTreeFolder('root', event)" class="w-5 h-5 flex items-center justify-center text-[#00529C]">
+                        <i id="folderIcon-root" class="fa-solid ${isRootExpanded ? 'fa-chevron-down' : 'fa-chevron-right'} text-xs"></i>
+                    </button>
+                    <i class="fa-solid fa-folder-open text-[#00529C] text-base"></i>
+                    <label class="flex items-center gap-2 cursor-pointer font-bold text-blue-950 text-sm" onclick="event.stopPropagation()">
+                        <input type="checkbox" onchange="toggleRootStaffCheckbox(this.checked)" id="grpChk-root" class="rounded text-[#00529C] focus:ring-blue-500 w-4 h-4">
+                        <span>CÁN BỘ ĐOÀN</span>
+                    </label>
+                    <span class="text-xs text-blue-800 bg-blue-200/80 px-2 py-0.5 rounded-full font-bold">(${activeUsers.length} cán bộ)</span>
+                </div>
+                <span class="text-[11px] text-blue-700 font-medium">Bấm mở/gập thư mục</span>
+            `;
+            rootHeader.onclick = (e) => toggleTreeFolder('root', e);
+
+            // Nội dung bên trong thư mục gốc: CHỨA CÁC NHÓM ĐÃ TẠO & CÁN BỘ LẺ
+            const rootChildrenDiv = document.createElement('div');
+            rootChildrenDiv.id = 'treeChildren-root';
+            rootChildrenDiv.className = `${isRootExpanded ? '' : 'hidden'} p-2.5 space-y-2.5 bg-slate-50/60`;
+
+            // 1. Render các nhóm con đã tạo (Nhóm nằm trong Cán bộ Đoàn)
+            if (groupsList && groupsList.length > 0) {
+                groupsList.forEach(grp => {
+                    const grpMemberIds = (grp.member_ids || '').split(',').map(s => s.trim()).filter(Boolean);
+                    const grpUsers = usersList.filter(u => grpMemberIds.includes(String(u.id)) && u.username !== 'admin');
+                    const isGrpExpanded = expandedGroups[grp.id] !== false; // Mặc định mở
+
+                    const grpDiv = document.createElement('div');
+                    grpDiv.className = 'border border-amber-300 rounded-lg overflow-hidden bg-white shadow-sm ml-3';
+
+                    // Thư mục nhóm con
+                    const grpHeader = document.createElement('div');
+                    grpHeader.className = 'flex items-center justify-between p-2 bg-amber-50 hover:bg-amber-100/70 cursor-pointer select-none';
+                    grpHeader.innerHTML = `
+                        <div class="flex items-center gap-2 flex-1">
+                            <button type="button" onclick="toggleTreeFolder(${grp.id}, event)" class="w-4 h-4 flex items-center justify-center text-amber-700">
+                                <i id="folderIcon-${grp.id}" class="fa-solid ${isGrpExpanded ? 'fa-chevron-down' : 'fa-chevron-right'} text-[10px]"></i>
+                            </button>
+                            <i class="fa-solid fa-folder text-amber-500 text-sm"></i>
+                            <label class="flex items-center gap-1.5 cursor-pointer font-bold text-slate-800" onclick="event.stopPropagation()">
+                                <input type="checkbox" onchange="toggleGroupCheckbox(${grp.id}, this.checked)" id="grpChk-${grp.id}" class="chk-tree-parent rounded text-amber-600 focus:ring-amber-500 w-3.5 h-3.5">
+                                <span>${grp.name}</span>
+                            </label>
+                            <span class="text-[11px] text-amber-900 bg-amber-200/70 px-1.5 py-0.2 rounded font-semibold">(${grpUsers.length} cán bộ)</span>
+                        </div>
+                    `;
+                    grpHeader.onclick = (e) => toggleTreeFolder(grp.id, e);
+
+                    // Thành viên trong nhóm con
+                    const grpChildrenDiv = document.createElement('div');
+                    grpChildrenDiv.id = `treeChildren-${grp.id}`;
+                    grpChildrenDiv.className = `${isGrpExpanded ? '' : 'hidden'} pl-8 pr-2 py-1.5 space-y-1 bg-white border-t border-amber-100`;
+
+                    if (grpUsers.length === 0) {
+                        grpChildrenDiv.innerHTML = '<div class="text-[11px] text-slate-400 italic py-1">Nhóm chưa có cán bộ</div>';
+                    } else {
+                        grpUsers.forEach(u => {
+                            const item = document.createElement('label');
+                            item.className = 'flex items-center gap-2 py-1 px-1.5 hover:bg-slate-100 rounded cursor-pointer transition text-xs';
+                            item.innerHTML = `
+                                <input type="checkbox" data-user-id="${u.id}" data-user-name="${u.full_name}" data-user-title="${u.title || 'Cán bộ'}"
+                                       value="Đ/c ${u.full_name} (${u.title || 'Cán bộ'})" onchange="onChildCheckboxChange(${grp.id})"
+                                       class="chk-tree-child chk-child-grp-${grp.id} rounded text-blue-600 focus:ring-blue-500 w-3.5 h-3.5">
+                                <i class="fa-solid fa-user text-slate-400 text-[11px]"></i>
+                                <span><b>${u.full_name}</b> <span class="text-slate-500">(${u.title || 'Cán bộ'} - ${u.department})</span></span>
+                            `;
+                            grpChildrenDiv.appendChild(item);
+                        });
+                    }
+
+                    grpDiv.appendChild(grpHeader);
+                    grpDiv.appendChild(grpChildrenDiv);
+                    rootChildrenDiv.appendChild(grpDiv);
+                });
+            }
+
+            // 2. Thư mục con: Cán bộ khác / Cá nhân (Chọn lẻ từng người)
+            const otherStaffDiv = document.createElement('div');
+            otherStaffDiv.className = 'border border-slate-300 rounded-lg overflow-hidden bg-white shadow-sm ml-3';
+            const isOtherExpanded = expandedGroups['other'] !== false;
+
+            const otherHeader = document.createElement('div');
+            otherHeader.className = 'flex items-center justify-between p-2 bg-slate-100 hover:bg-slate-200/70 cursor-pointer select-none';
+            otherHeader.innerHTML = `
+                <div class="flex items-center gap-2 flex-1">
+                    <button type="button" onclick="toggleTreeFolder('other', event)" class="w-4 h-4 flex items-center justify-center text-slate-600">
+                        <i id="folderIcon-other" class="fa-solid ${isOtherExpanded ? 'fa-chevron-down' : 'fa-chevron-right'} text-[10px]"></i>
+                    </button>
+                    <i class="fa-solid fa-users text-slate-600 text-sm"></i>
+                    <label class="flex items-center gap-1.5 cursor-pointer font-bold text-slate-800" onclick="event.stopPropagation()">
+                        <input type="checkbox" onchange="toggleOtherStaffCheckbox(this.checked)" id="grpChk-other" class="rounded text-blue-600 focus:ring-blue-500 w-3.5 h-3.5">
+                        <span>Cán bộ khác / Cá nhân (Chọn lẻ từng người)</span>
+                    </label>
+                    <span class="text-[11px] text-slate-600 bg-slate-200 px-1.5 py-0.2 rounded font-semibold">(${activeUsers.length} người)</span>
+                </div>
+            `;
+            otherHeader.onclick = (e) => toggleTreeFolder('other', e);
+
+            const otherChildrenDiv = document.createElement('div');
+            otherChildrenDiv.id = 'treeChildren-other';
+            otherChildrenDiv.className = `${isOtherExpanded ? '' : 'hidden'} pl-8 pr-2 py-1.5 grid grid-cols-1 sm:grid-cols-2 gap-1.5 bg-white border-t border-slate-200`;
+
+            activeUsers.forEach(u => {
+                const item = document.createElement('label');
+                item.className = 'flex items-center gap-2 py-1 px-1.5 hover:bg-slate-100 rounded cursor-pointer transition text-xs';
+                item.innerHTML = `
+                    <input type="checkbox" data-user-id="${u.id}" data-user-name="${u.full_name}" data-user-title="${u.title || 'Cán bộ'}"
+                           value="Đ/c ${u.full_name} (${u.title || 'Cán bộ'})" onchange="onGlobalStaffCheckboxChange(${u.id}, this.checked)"
+                           class="chk-tree-global chk-global-user-${u.id} rounded text-blue-600 focus:ring-blue-500 w-3.5 h-3.5">
+                    <i class="fa-solid fa-user text-slate-400 text-[11px]"></i>
+                    <span class="truncate"><b>${u.full_name}</b> <span class="text-slate-500">(${u.title || 'Cán bộ'})</span></span>
+                `;
+                otherChildrenDiv.appendChild(item);
+            });
+
+            otherStaffDiv.appendChild(otherHeader);
+            otherStaffDiv.appendChild(otherChildrenDiv);
+            rootChildrenDiv.appendChild(otherStaffDiv);
+
+            rootFolderDiv.appendChild(rootHeader);
+            rootFolderDiv.appendChild(rootChildrenDiv);
+            container.appendChild(rootFolderDiv);
+
+            renderAttendeesPreview();
+        }
+        function toggleTreeFolder(folderKey, e) {
+            if (e) e.stopPropagation();
+            const childDiv = document.getElementById(`treeChildren-${folderKey}`);
+            const icon = document.getElementById(`folderIcon-${folderKey}`);
+            if (!childDiv || !icon) return;
+
+            const isCurrentlyHidden = childDiv.classList.contains('hidden');
+            if (isCurrentlyHidden) {
+                childDiv.classList.remove('hidden');
+                icon.className = 'fa-solid fa-chevron-down text-[11px]';
+                expandedGroups[folderKey] = true;
+            } else {
+                childDiv.classList.add('hidden');
+                icon.className = 'fa-solid fa-chevron-right text-[11px]';
+                expandedGroups[folderKey] = false;
+            }
+        }
+
+        function expandCollapseAllTrees(expand) {
+            if (groupsList) {
+                groupsList.forEach(g => {
+                    expandedGroups[g.id] = expand;
+                });
+            }
+            expandedGroups['root'] = expand; expandedGroups['other'] = expand; expandedGroups['all'] = expand;
+            renderAttendeesTreeView();
+        }
+
+        function toggleGroupCheckbox(grpId, isChecked) {
+            document.querySelectorAll(`.chk-child-grp-${grpId}`).forEach(chk => {
+                chk.checked = isChecked;
+                const uid = chk.getAttribute('data-user-id');
+                syncGlobalStaffCheckbox(uid, isChecked);
+            });
+            syncAllGroupHeaders();
+            renderAttendeesPreview();
+        }
+
+        function onChildCheckboxChange(grpId) {
+            const childBoxes = Array.from(document.querySelectorAll(`.chk-child-grp-${grpId}`));
+            const allChecked = childBoxes.length > 0 && childBoxes.every(c => c.checked);
+            const parentChk = document.getElementById(`grpChk-${grpId}`);
+            if (parentChk) parentChk.checked = allChecked;
+
+            childBoxes.forEach(chk => {
+                const uid = chk.getAttribute('data-user-id');
+                syncGlobalStaffCheckbox(uid, chk.checked);
+            });
+
+            renderAttendeesPreview();
+        }
+
+        function onGlobalStaffCheckboxChange(userId, isChecked) {
+            document.querySelectorAll(`.chk-tree-child[data-user-id="${userId}"]`).forEach(c => {
+                c.checked = isChecked;
+            });
+            syncAllGroupHeaders();
+            renderAttendeesPreview();
+        }
+
+        function syncGlobalStaffCheckbox(userId, isChecked) {
+            const gChk = document.querySelector(`.chk-global-user-${userId}`);
+            if (gChk) gChk.checked = isChecked;
+        }
+
+        function syncAllGroupHeaders() {
+            if (groupsList) {
+                groupsList.forEach(g => {
+                    const childBoxes = Array.from(document.querySelectorAll(`.chk-child-grp-${g.id}`));
+                    const allChecked = childBoxes.length > 0 && childBoxes.every(c => c.checked);
+                    const parentChk = document.getElementById(`grpChk-${g.id}`);
+                    if (parentChk) parentChk.checked = allChecked;
+                });
+            }
+
+            const allGlobalBoxes = Array.from(document.querySelectorAll('.chk-tree-global'));
+            const allChecked = allGlobalBoxes.length > 0 && allGlobalBoxes.every(c => c.checked);
+            const otherHeaderChk = document.getElementById('grpChk-other');
+            if (otherHeaderChk) otherHeaderChk.checked = allChecked;
+
+            const allTreeChildren = Array.from(document.querySelectorAll('.chk-tree-child, .chk-tree-global'));
+            const rootAllChecked = allTreeChildren.length > 0 && allTreeChildren.every(c => c.checked);
+            const rootHeaderChk = document.getElementById('grpChk-root');
+            if (rootHeaderChk) rootHeaderChk.checked = rootAllChecked;
+        }
+
+        function toggleAllStaffCheckbox(isChecked) {
+            document.querySelectorAll('.chk-tree-global').forEach(c => c.checked = isChecked);
+            document.querySelectorAll('.chk-tree-child').forEach(c => c.checked = isChecked);
+            document.querySelectorAll('.chk-tree-parent').forEach(c => c.checked = isChecked);
+            renderAttendeesPreview();
+        }
+
+        function clearAllSelectedAttendees() {
+            toggleAllStaffCheckbox(false);
+            const customInput = document.getElementById('customAttendeesInput');
+            if (customInput) customInput.value = '';
+            renderAttendeesPreview();
+        }
+
+        function uncheckSingleAttendee(userId) {
+            onGlobalStaffCheckboxChange(userId, false);
+            const gChk = document.querySelector(`.chk-global-user-${userId}`);
+            if (gChk) gChk.checked = false;
+        }
+
+        function renderAttendeesPreview() {
+            const tagsContainer = document.getElementById('selectedAttendeesTags');
+            if (!tagsContainer) return;
+
+            const selectedMap = new Map();
+            document.querySelectorAll('.chk-tree-global:checked, .chk-tree-child:checked').forEach(chk => {
+                const uId = chk.getAttribute('data-user-id');
+                const uName = chk.getAttribute('data-user-name');
+                const uTitle = chk.getAttribute('data-user-title');
+                const val = chk.value;
+                if (uId && !selectedMap.has(uId)) {
+                    selectedMap.set(uId, { id: uId, name: uName, title: uTitle, value: val });
+                }
+            });
+
+            const selectedList = Array.from(selectedMap.values());
+            const badgeCount = document.getElementById('selectedCountBadge');
+            if (badgeCount) badgeCount.innerText = selectedList.length;
+
+            if (selectedList.length === 0) {
+                tagsContainer.innerHTML = '<span class="text-xs text-slate-400 italic">Chưa có cán bộ nào được chọn</span>';
+            } else {
+                tagsContainer.innerHTML = '';
+                selectedList.forEach(item => {
+                    const tag = document.createElement('span');
+                    tag.className = 'inline-flex items-center gap-1.5 bg-blue-100 text-[#00529C] px-2.5 py-1 rounded-full text-xs font-semibold border border-blue-200';
+                    tag.innerHTML = `
+                        <span>${item.name} <span class="font-normal text-[11px] text-blue-700">(${item.title})</span></span>
+                        <button type="button" onclick="uncheckSingleAttendee(${item.id})" class="text-blue-500 hover:text-red-600 ml-0.5 font-bold">&times;</button>
+                    `;
+                    tagsContainer.appendChild(tag);
+                });
+            }
+
+            const checkedValues = selectedList.map(c => c.value);
+            const customText = document.getElementById('customAttendeesInput') ? document.getElementById('customAttendeesInput').value.trim() : '';
+
+            const parts = [];
+            if (checkedValues.length > 0) parts.push(checkedValues.join(', '));
+            if (customText) parts.push(customText);
+
+            const previewEl = document.getElementById('combinedAttendeesPreview');
+            if (previewEl) {
+                if (parts.length === 0) {
+                    previewEl.innerText = 'Chưa chọn hoặc nhập thành phần tham dự';
+                    previewEl.className = 'italic text-slate-500';
+                } else {
+                    previewEl.innerText = parts.join('; ');
+                    previewEl.className = 'font-semibold text-slate-800';
+                }
+            }
+        }
+
+        function getFinalAttendeesValue() {
+            const selectedMap = new Map();
+            document.querySelectorAll('.chk-tree-global:checked, .chk-tree-child:checked').forEach(chk => {
+                const uId = chk.getAttribute('data-user-id');
+                if (uId && !selectedMap.has(uId)) {
+                    selectedMap.set(uId, chk.value);
+                }
+            });
+
+            const checkedValues = Array.from(selectedMap.values());
+            const customText = document.getElementById('customAttendeesInput') ? document.getElementById('customAttendeesInput').value.trim() : '';
+
+            const parts = [];
+            if (checkedValues.length > 0) parts.push(checkedValues.join(', '));
+            if (customText) parts.push(customText);
+            return parts.join('; ');
+        }
+        
+        // ================= NOTIFICATIONS (THÔNG BÁO CHO NGƯỜI CÓ LỊCH TRONG TUẦN) =================
+        async function loadUserNotifications() {
+            if (!currentUser) return;
+            try {
+                const res = await fetch(`/api/notifications?user_id=${currentUser.id}&user_name=${encodeURIComponent(currentUser.full_name)}`);
+                userNotifications = await res.json();
+                renderNotificationsUI();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderNotificationsUI() {
+            const bell = document.getElementById('notifBellWrapper');
+            if (!currentUser) {
+                bell.classList.add('hidden');
+                return;
+            }
+            bell.classList.remove('hidden');
+
+            const unread = userNotifications.filter(n => n.is_read === 0);
+            const countBadge = document.getElementById('notifCountBadge');
+            const dotBadge = document.getElementById('notifBadge');
+
+            if (unread.length > 0) {
+                countBadge.innerText = unread.length;
+                countBadge.classList.remove('hidden');
+                dotBadge.classList.remove('hidden');
+            } else {
+                countBadge.classList.add('hidden');
+                dotBadge.classList.add('hidden');
+            }
+
+            const listContainer = document.getElementById('notifListContainer');
+            if (userNotifications.length === 0) {
+                listContainer.innerHTML = '<div class="text-center py-6 text-slate-400 italic">Đồng chí chưa có thông báo cuộc họp nào</div>';
+                return;
+            }
+
+            listContainer.innerHTML = '';
+            userNotifications.forEach(n => {
+                const item = document.createElement('div');
+                const isUnread = n.is_read === 0;
+                item.className = `p-3 transition hover:bg-slate-50 ${isUnread ? 'bg-blue-50/60 font-semibold' : 'bg-white'}`;
+                
+                const roleTag = n.role_in_meeting === 'chairperson' 
+                    ? '<span class="bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded text-[10px] font-bold">CHỦ TRÌ</span>' 
+                    : '<span class="bg-blue-100 text-blue-800 px-1.5 py-0.2 rounded text-[10px] font-bold">THAM DỰ</span>';
+
+                item.innerHTML = `
+                    <div class="flex items-center justify-between gap-1 mb-1">
+                        ${roleTag}
+                        <span class="text-[10px] text-slate-400">${n.meeting_date} (${n.meeting_time})</span>
+                    </div>
+                    <div class="text-slate-800 text-xs mb-1">${n.message}</div>
+                    <div class="text-[11px] text-slate-500 flex items-center gap-1">
+                        <i class="fa-solid fa-location-dot text-emerald-600"></i> ${n.meeting_location}
+                    </div>
+                `;
+                listContainer.appendChild(item);
+            });
+        }
+
+        function toggleNotificationPanel() {
+            const dropdown = document.getElementById('notifDropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        async function markAllNotificationsRead() {
+            if (!currentUser) return;
+            try {
+                await fetch('/api/notifications/mark-read', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: currentUser.id })
+                });
+                await loadUserNotifications();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // ================= USER SELF CHANGE PASSWORD =================
+        function openChangePasswordModal() {
+            document.getElementById('pwdCurrent').value = '';
+            document.getElementById('pwdNew').value = '';
+            document.getElementById('pwdConfirm').value = '';
+            document.getElementById('pwdAlert').classList.add('hidden');
+            document.getElementById('changePasswordModal').classList.remove('hidden');
+        }
+
+        function closeChangePasswordModal() {
+            document.getElementById('changePasswordModal').classList.add('hidden');
+        }
+
+        async function handleChangePasswordSubmit(e) {
+            e.preventDefault();
+            const alertBox = document.getElementById('pwdAlert');
+            alertBox.classList.add('hidden');
+
+            const curPwd = document.getElementById('pwdCurrent').value;
+            const newPwd = document.getElementById('pwdNew').value;
+            const cfmPwd = document.getElementById('pwdConfirm').value;
+
+            if (newPwd !== cfmPwd) {
+                alertBox.className = 'text-xs p-2.5 rounded border bg-red-50 text-red-700 border-red-200';
+                alertBox.innerText = 'Mật khẩu mới và xác nhận mật khẩu không trùng khớp!';
+                alertBox.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/users/change-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: currentUser.id,
+                        current_password: curPwd,
+                        new_password: newPwd
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    alertBox.className = 'text-xs p-2.5 rounded border bg-red-50 text-red-700 border-red-200';
+                    alertBox.innerText = data.error;
+                    alertBox.classList.remove('hidden');
+                    return;
+                }
+
+                alert('Đổi mật khẩu thành công!');
+                closeChangePasswordModal();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // ================= ADMIN EDIT USER & RESET PASSWORD =================
+        function openEditUserModal(user) {
+            document.getElementById('editUserId').value = user.id;
+            document.getElementById('editUsername').value = user.username;
+            document.getElementById('editFullName').value = user.full_name;
+            document.getElementById('editTitle').value = user.title || '';
+            document.getElementById('editDepartment').value = user.department;
+            document.getElementById('editRole').value = user.role;
+            document.getElementById('editCanApprove').checked = user.can_approve === 1;
+            document.getElementById('editUserModal').classList.remove('hidden');
+        }
+
+        function closeEditUserModal() {
+            document.getElementById('editUserModal').classList.add('hidden');
+        }
+
+        async function handleEditUserSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('editUserId').value;
+            const payload = {
+                full_name: document.getElementById('editFullName').value.trim(),
+                title: document.getElementById('editTitle').value,
+                department: document.getElementById('editDepartment').value,
+                role: document.getElementById('editRole').value,
+                can_approve: document.getElementById('editCanApprove').checked ? 1 : 0
+            };
+
+            try {
+                const res = await fetch(`/api/users/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    alert(data.error);
+                    return;
+                }
+                alert('Cập nhật thông tin cán bộ thành công!');
+                closeEditUserModal();
+                await loadAllUsers();
+                loadUsersList();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function adminResetPassword(userId, userName) {
+            if (!confirm(`Đồng chí có chắc chắn muốn đặt lại mật khẩu cho tài khoản "${userName}" về mặc định (123456)?`)) return;
+
+            try {
+                const res = await fetch(`/api/users/${userId}/reset-password`, {
+                    method: 'POST'
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert(`Đã đặt lại mật khẩu cho cán bộ "${userName}" thành công! Mật khẩu mới là 123456.`);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // ================= ADMIN SUBTABS & CRUD =================
+        function switchAdminSubtab(tab) {
+            document.getElementById('adminPanelUsers').classList.add('hidden');
+            document.getElementById('adminPanelLocs').classList.add('hidden');
+            document.getElementById('adminPanelGroups').classList.add('hidden');
+            document.getElementById('adminPanelDepts').classList.add('hidden');
+            document.getElementById('adminPanelTitles').classList.add('hidden');
+
+            document.getElementById('subtabBtnUsers').className = 'pb-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-semibold text-xs sm:text-sm whitespace-nowrap';
+            document.getElementById('subtabBtnLocs').className = 'pb-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-semibold text-xs sm:text-sm whitespace-nowrap';
+            document.getElementById('subtabBtnGroups').className = 'pb-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-semibold text-xs sm:text-sm whitespace-nowrap';
+            document.getElementById('subtabBtnDepts').className = 'pb-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-semibold text-xs sm:text-sm whitespace-nowrap';
+            document.getElementById('subtabBtnTitles').className = 'pb-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-semibold text-xs sm:text-sm whitespace-nowrap';
+
+            if (tab === 'users') {
+                document.getElementById('adminPanelUsers').classList.remove('hidden');
+                document.getElementById('subtabBtnUsers').className = 'pb-2 border-b-2 border-[#00529C] text-[#00529C] font-bold text-xs sm:text-sm whitespace-nowrap';
+                loadUsersList();
+            } else if (tab === 'locs') {
+                document.getElementById('adminPanelLocs').classList.remove('hidden');
+                document.getElementById('subtabBtnLocs').className = 'pb-2 border-b-2 border-blue-600 text-blue-700 font-bold text-xs sm:text-sm whitespace-nowrap';
+                renderLocationTable();
+            } else if (tab === 'groups') {
+                document.getElementById('adminPanelGroups').classList.remove('hidden');
+                document.getElementById('subtabBtnGroups').className = 'pb-2 border-b-2 border-amber-600 text-amber-700 font-bold text-xs sm:text-sm whitespace-nowrap';
+                renderGroupTable();
+                populateGroupMemberCheckboxes();
+            } else if (tab === 'depts') {
+                document.getElementById('adminPanelDepts').classList.remove('hidden');
+                document.getElementById('subtabBtnDepts').className = 'pb-2 border-b-2 border-emerald-600 text-emerald-700 font-bold text-xs sm:text-sm whitespace-nowrap';
+                renderDeptTable();
+            } else if (tab === 'titles') {
+                document.getElementById('adminPanelTitles').classList.remove('hidden');
+                document.getElementById('subtabBtnTitles').className = 'pb-2 border-b-2 border-blue-600 text-blue-700 font-bold text-xs sm:text-sm whitespace-nowrap';
+                renderTitleTable();
+            }
+        }
+
+        // Locations CRUD
+        async function handleCreateLocation(e) {
+            e.preventDefault();
+            const name = document.getElementById('newLocName').value.trim();
+            if (!name) return;
+            try {
+                const res = await fetch('/api/locations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    alert(data.error);
+                    return;
+                }
+                document.getElementById('newLocName').value = '';
+                await loadLocations();
+                alert(`Đã thêm địa điểm: "${name}"`);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderLocationTable() {
+            const tbody = document.getElementById('locTableBody');
+            tbody.innerHTML = '';
+            locationsList.forEach((l, idx) => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50';
+                tr.innerHTML = `
+                    <td class="p-2.5 text-slate-500 font-mono text-xs">${idx + 1}</td>
+                    <td class="p-2.5 font-bold text-slate-800">${l.name}</td>
+                    <td class="p-2.5 text-right">
+                        <button onclick="deleteLocation(${l.id}, '${l.name}')" class="text-red-500 hover:text-red-700 p-1">
+                            <i class="fa-regular fa-trash-can"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function deleteLocation(id, name) {
+            if (!confirm(`Đồng chí có chắc chắn muốn xóa địa điểm "${name}"?`)) return;
+            try {
+                await fetch(`/api/locations/${id}`, { method: 'DELETE' });
+                await loadLocations();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // Groups CRUD
+        function populateGroupMemberCheckboxes() {
+            const container = document.getElementById('groupMembersCheckboxes');
+            container.innerHTML = '';
+            usersList.forEach(u => {
+                if (u.username === 'admin') return;
+                const label = document.createElement('label');
+                label.className = 'flex items-center gap-2 cursor-pointer hover:bg-slate-200/60 p-1 rounded';
+                label.innerHTML = `
+                    <input type="checkbox" value="${u.id}" class="chk-grp-member rounded text-amber-600">
+                    <span>${u.full_name} <span class="text-slate-500">(${u.title || 'Cán bộ'})</span></span>
+                `;
+                container.appendChild(label);
+            });
+        }
+
+        async function handleCreateGroup(e) {
+            e.preventDefault();
+            const name = document.getElementById('newGroupName').value.trim();
+            const memberIds = Array.from(document.querySelectorAll('.chk-grp-member:checked')).map(c => c.value).join(',');
+            if (!name) return;
+            if (!memberIds) {
+                alert('Vui lòng chọn ít nhất 1 cán bộ vào nhóm!');
+                return;
+            }
+            try {
+                const res = await fetch('/api/groups', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, member_ids: memberIds })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    alert(data.error);
+                    return;
+                }
+                document.getElementById('newGroupName').value = '';
+                document.querySelectorAll('.chk-grp-member').forEach(c => c.checked = false);
+                await loadAllUsers();
+                await loadGroups();
+                alert(`Đã tạo thành công nhóm: "${name}"!`);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderGroupTable() {
+            const tbody = document.getElementById('groupTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (!groupsList || groupsList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-slate-400 italic">Chưa có nhóm triệu tập nào</td></tr>';
+                return;
+            }
+
+            groupsList.forEach((g, idx) => {
+                const ids = (g.member_ids || '').split(',').map(s => s.trim()).filter(Boolean);
+                const memberBadges = [];
+
+                ids.forEach(id => {
+                    const u = usersList ? usersList.find(user => String(user.id) === String(id)) : null;
+                    if (u) {
+                        memberBadges.push(`<span class="inline-block bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs mr-1 mb-1 border border-slate-200">${u.full_name} <span class="text-slate-400">(${u.title || 'Cán bộ'})</span></span>`);
+                    }
+                });
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50';
+                tr.innerHTML = `
+                    <td class="p-2.5 text-slate-500 font-mono text-xs">${idx + 1}</td>
+                    <td class="p-2.5 font-bold text-slate-800 whitespace-nowrap">${g.name}</td>
+                    <td class="p-2.5 text-xs text-slate-600">${memberBadges.length > 0 ? memberBadges.join('') : '<span class="italic text-slate-400">Chưa có thành viên</span>'}</td>
+                    <td class="p-2.5 text-right whitespace-nowrap">
+                        <div class="flex items-center justify-end gap-1.5">
+                            <button onclick='openEditGroupModal(${JSON.stringify(g)})' class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded text-xs font-semibold flex items-center gap-1 border border-amber-300 shadow-sm" title="Thêm thành viên hoặc chỉnh sửa nhóm">
+                                <i class="fa-solid fa-user-plus text-amber-600"></i> Thêm thành viên
+                            </button>
+                            <button onclick="deleteGroup(${g.id}, '${g.name}')" class="p-1 text-red-500 hover:text-red-700 ml-1" title="Xóa nhóm này">
+                                <i class="fa-regular fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openEditGroupModal(group) {
+            document.getElementById('editGroupId').value = group.id;
+            document.getElementById('editGroupName').value = group.name;
+
+            const currentMemberIds = (group.member_ids || '').split(',').map(s => s.trim());
+            const container = document.getElementById('editGroupMembersContainer');
+            container.innerHTML = '';
+
+            usersList.forEach(u => {
+                if (u.username === 'admin') return;
+                const isMember = currentMemberIds.includes(String(u.id));
+
+                const label = document.createElement('label');
+                label.className = `flex items-center gap-2 p-1.5 rounded cursor-pointer transition ${isMember ? 'bg-amber-50/90 border border-amber-300 font-medium' : 'hover:bg-slate-100 border border-transparent'}`;
+                label.innerHTML = `
+                    <input type="checkbox" value="${u.id}" ${isMember ? 'checked' : ''} class="chk-edit-grp-member rounded text-amber-600 w-4 h-4">
+                    <span><b>${u.full_name}</b> <span class="text-slate-500">(${u.title || 'Cán bộ'} - ${u.department})</span></span>
+                `;
+                container.appendChild(label);
+            });
+
+            document.getElementById('editGroupModal').classList.remove('hidden');
+        }
+
+        function closeEditGroupModal() {
+            document.getElementById('editGroupModal').classList.add('hidden');
+        }
+
+        async function handleEditGroupSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('editGroupId').value;
+            const name = document.getElementById('editGroupName').value.trim();
+            const memberIds = Array.from(document.querySelectorAll('.chk-edit-grp-member:checked')).map(c => c.value).join(',');
+
+            if (!name) return;
+            if (!memberIds) {
+                alert('Vui lòng chọn ít nhất 1 cán bộ vào nhóm!');
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/groups/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, member_ids: memberIds })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    alert(data.error);
+                    return;
+                }
+                alert('Đã cập nhật thành viên cho nhóm thành công!');
+                closeEditGroupModal();
+                await loadAllUsers();
+                await loadGroups();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function deleteGroup(id, name) {
+            if (!confirm(`Đồng chí có chắc muốn xóa nhóm "${name}"?`)) return;
+            try {
+                await fetch(`/api/groups/${id}`, { method: 'DELETE' });
+                await loadGroups();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // Departments & Titles CRUD
+        async function handleCreateDepartment(e) {
+            e.preventDefault();
+            const name = document.getElementById('newDeptName').value.trim();
+            if (!name) return;
+            try {
+                const res = await fetch('/api/departments', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    alert(data.error);
+                    return;
+                }
+                document.getElementById('newDeptName').value = '';
+                await loadDepartments();
+                alert(`Đã thêm thành công ban: "${name}"`);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderDeptTable() {
+            const tbody = document.getElementById('deptTableBody');
+            tbody.innerHTML = '';
+            departmentsList.forEach((d, idx) => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50';
+                tr.innerHTML = `
+                    <td class="p-2.5 text-slate-500 font-mono text-xs">${idx + 1}</td>
+                    <td class="p-2.5 font-bold text-slate-800">${d.name}</td>
+                    <td class="p-2.5 text-right">
+                        <button onclick="deleteDepartment(${d.id}, '${d.name}')" class="text-red-500 hover:text-red-700 p-1">
+                            <i class="fa-regular fa-trash-can"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function deleteDepartment(id, name) {
+            if (!confirm(`Đồng chí có chắc chắn muốn xóa ban "${name}"?`)) return;
+            try {
+                await fetch(`/api/departments/${id}`, { method: 'DELETE' });
+                await loadDepartments();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function handleCreateTitle(e) {
+            e.preventDefault();
+            const name = document.getElementById('newTitleName').value.trim();
+            if (!name) return;
+            try {
+                const res = await fetch('/api/titles', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    alert(data.error);
+                    return;
+                }
+                document.getElementById('newTitleName').value = '';
+                await loadTitles();
+                alert(`Đã thêm chức vụ: "${name}"`);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderTitleTable() {
+            const tbody = document.getElementById('titleTableBody');
+            tbody.innerHTML = '';
+            titlesList.forEach((t, idx) => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50';
+                tr.innerHTML = `
+                    <td class="p-2.5 text-slate-500 font-mono text-xs">${idx + 1}</td>
+                    <td class="p-2.5 font-bold text-slate-800">${t.name}</td>
+                    <td class="p-2.5 text-right">
+                        <button onclick="deleteTitle(${t.id}, '${t.name}')" class="text-red-500 hover:text-red-700 p-1">
+                            <i class="fa-regular fa-trash-can"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function deleteTitle(id, name) {
+            if (!confirm(`Đồng chí có chắc chắn muốn xóa chức vụ "${name}"?`)) return;
+            try {
+                await fetch(`/api/titles/${id}`, { method: 'DELETE' });
+                await loadTitles();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function onRoleSelectChange(role) {
+            const chkCanApprove = document.getElementById('newCanApprove');
+            if (role === 'approver' || role === 'admin') {
+                chkCanApprove.checked = true;
+            } else {
+                chkCanApprove.checked = false;
+            }
+        }
+
+        // ================= AUTH & USER LIFECYCLE =================
+        
+        // Tích chọn toàn bộ Cán bộ Đoàn (Thư mục gốc)
+        function toggleRootStaffCheckbox(isChecked) {
+            toggleAllStaffCheckbox(isChecked);
+        }
+
+        function toggleOtherStaffCheckbox(isChecked) {
+            document.querySelectorAll('.chk-tree-global').forEach(c => {
+                c.checked = isChecked;
+                const uid = c.getAttribute('data-user-id');
+                document.querySelectorAll(`.chk-tree-child[data-user-id="${uid}"]`).forEach(ch => ch.checked = isChecked);
+            });
+            syncAllGroupHeaders();
+            renderAttendeesPreview();
+        }
+
+        // ================= THEO DÕI LỊCH CHỜ DUYỆT (CHO NGƯỜI ĐĂNG KÝ) =================
+        async function loadMySchedulesList() {
+            const container = document.getElementById('mySchedulesListContainer');
+            if (!container) return;
+            container.innerHTML = '<div class="text-center py-6 text-slate-400">Đang tải danh sách lịch bạn đã đăng ký...</div>';
+
+            try {
+                const res = await fetch('/api/schedules');
+                const allSchedules = await res.json();
+                
+                // Lọc theo tài khoản đang đăng nhập
+                const mySchedules = currentUser ? allSchedules.filter(s => s.created_by_name === currentUser.full_name || (currentUser.role === 'admin')) : [];
+                
+                const pendingCount = mySchedules.filter(s => s.status === 'pending').length;
+                const badge = document.getElementById('myPendingBadge');
+                if (badge) {
+                    if (pendingCount > 0) {
+                        badge.innerText = pendingCount;
+                        badge.classList.remove('hidden');
+                    } else {
+                        badge.classList.add('hidden');
+                    }
+                }
+
+                if (mySchedules.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-12 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                            <i class="fa-regular fa-calendar-check text-4xl text-slate-400 mb-2"></i>
+                            <p class="font-bold text-slate-700">Đồng chí chưa đăng ký cuộc họp nào!</p>
+                            <p class="text-xs text-slate-500">Hãy vào mục "Đăng ký lịch" để gửi lịch công tác tuần mới.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = '';
+                mySchedules.forEach(item => {
+                    const card = document.createElement('div');
+                    let statusBadge = '';
+                    let borderClass = '';
+
+                    if (item.status === 'approved') {
+                        statusBadge = `<span class="bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs px-2.5 py-1 rounded-full font-bold flex items-center gap-1">
+                            <i class="fa-solid fa-circle-check"></i> ĐÃ DUYỆT BỞI: ${item.approved_by_name || 'Bí thư Đoàn'}
+                        </span>`;
+                        borderClass = 'border-emerald-200 bg-emerald-50/30';
+                    } else if (item.status === 'rejected') {
+                        statusBadge = `<span class="bg-red-100 text-red-800 border border-red-300 text-xs px-2.5 py-1 rounded-full font-bold flex items-center gap-1">
+                            <i class="fa-solid fa-triangle-exclamation"></i> YÊU CẦU CHỈNH SỬA
+                        </span>`;
+                        borderClass = 'border-red-200 bg-red-50/40';
+                    } else {
+                        statusBadge = `<span class="bg-amber-100 text-amber-800 border border-amber-300 text-xs px-2.5 py-1 rounded-full font-bold flex items-center gap-1">
+                            <i class="fa-solid fa-clock"></i> ĐANG CHỜ PHÊ DUYỆT
+                        </span>`;
+                        borderClass = 'border-amber-200 bg-amber-50/30';
+                    }
+
+                    card.className = `p-4 rounded-xl border transition ${borderClass} space-y-2`;
+                    card.innerHTML = `
+                        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/80 pb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-[#00529C] bg-blue-100 px-2 py-0.5 rounded">${item.department}</span>
+                                <span class="text-xs font-semibold text-slate-600"><i class="fa-regular fa-calendar mr-1"></i>${item.date} (${item.start_time} - ${item.end_time})</span>
+                            </div>
+                            <div>${statusBadge}</div>
+                        </div>
+
+                        <div>
+                            <h4 class="font-bold text-slate-900 text-base">${item.title}</h4>
+                            <div class="text-xs text-slate-600 grid grid-cols-1 sm:grid-cols-2 gap-1 mt-1.5">
+                                <div><b class="text-slate-700">Địa điểm:</b> ${item.location}</div>
+                                <div><b class="text-slate-700">Chủ trì:</b> <span class="text-blue-900 font-semibold">${item.chairperson}</span></div>
+                                <div class="sm:col-span-2"><b class="text-slate-700">Thành phần triệu tập:</b> ${item.attendees}</div>
+                            </div>
+                        </div>
+
+                        ${item.status === 'rejected' && item.reject_reason ? `
+                            <div class="p-2.5 bg-red-100 border border-red-300 text-red-900 rounded-lg text-xs font-medium">
+                                <b>Lý do yêu cầu sửa từ người duyệt:</b> ${item.reject_reason}
+                            </div>
+                        ` : ''}
+
+                        ${item.note ? `<div class="text-xs text-slate-500 italic bg-white/70 p-2 rounded border border-slate-200">Ghi chú: ${item.note}</div>` : ''}
+                    `;
+                    container.appendChild(card);
+                });
+
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function applyUserRole() {
+            const noticeText = document.getElementById('accessNoticeText');
+            const btnReg = document.getElementById('btnTabRegister');
+            const btnMySched = document.getElementById('btnTabMySchedules');
+            const btnAppr = document.getElementById('btnTabApprovals');
+            const btnAdm = document.getElementById('btnTabAdmin');
+            const loginSec = document.getElementById('loginSection');
+            const userMenu = document.getElementById('userMenuSection');
+
+            if (!currentUser) {
+                btnReg.classList.add('hidden'); if (btnMySched) btnMySched.classList.add('hidden');
+                btnAppr.classList.add('hidden');
+                btnAdm.classList.add('hidden');
+                loginSec.classList.remove('hidden');
+                userMenu.classList.add('hidden');
+                document.getElementById('notifBellWrapper').classList.add('hidden');
+                noticeText.innerText = "Chế độ xem công khai: Đoàn viên xem lịch họp đã duyệt mà không cần đăng nhập.";
+                navigateTab('calendar');
+                return;
+            }
+
+            loginSec.classList.add('hidden');
+            userMenu.classList.remove('hidden');
+
+            btnReg.classList.remove('hidden'); if (btnMySched) { btnMySched.classList.remove('hidden'); loadMySchedulesList(); }
+            const regDept = document.getElementById('regDepartment');
+            if (regDept) regDept.value = currentUser.department;
+
+            if (currentUser.can_approve === 1 || currentUser.role === 'approver') {
+                btnAppr.classList.remove('hidden');
+                loadPendingCount();
+            } else {
+                btnAppr.classList.add('hidden');
+            }
+
+            if (currentUser.role === 'admin') {
+                btnAdm.classList.remove('hidden');
+            } else {
+                btnAdm.classList.add('hidden');
+            }
+
+            noticeText.innerHTML = `Đang đăng nhập: <b>${currentUser.full_name}</b> (${currentUser.title || 'Cán bộ'} - ${currentUser.department}) | ${currentUser.can_approve ? '<span class="text-emerald-700 font-bold">[Có quyền duyệt lịch tuần]</span>' : '<span class="text-blue-700 font-bold">[Quyền Đăng ký lịch]</span>'}`;
+            
+            loadUserNotifications();
+            renderCalendar();
+        }
+
+        function logout() {
+            currentUser = null;
+            applyUserRole();
+        }
+
+        function navigateTab(tabName) {
+            document.getElementById('tabCalendar').classList.add('hidden');
+            document.getElementById('tabRegister').classList.add('hidden');
+            if (document.getElementById('tabMySchedules')) document.getElementById('tabMySchedules').classList.add('hidden');
+            document.getElementById('tabApprovals').classList.add('hidden');
+            document.getElementById('tabAdmin').classList.add('hidden');
+
+            document.querySelectorAll('.nav-btn').forEach(b => {
+                b.classList.remove('bg-white/20');
+                b.classList.add('hover:bg-white/10');
+            });
+
+            if (tabName === 'mySchedules') {
+                if (document.getElementById('tabMySchedules')) document.getElementById('tabMySchedules').classList.remove('hidden');
+                const btn = document.getElementById('btnTabMySchedules');
+                if (btn) btn.classList.add('bg-white/20');
+                loadMySchedulesList();
+            } else if (tabName === 'calendar') {
+                document.getElementById('tabCalendar').classList.remove('hidden');
+                document.getElementById('btnTabCalendar').classList.add('bg-white/20');
+                renderCalendar();
+            } else if (tabName === 'register') {
+                document.getElementById('tabRegister').classList.remove('hidden');
+                document.getElementById('btnTabRegister').classList.add('bg-white/20');
+                loadAllUsers();
+                if (currentUser) {
+                    document.getElementById('regDepartment').value = currentUser.department;
+                }
+            } else if (tabName === 'approvals') {
+                document.getElementById('tabApprovals').classList.remove('hidden');
+                document.getElementById('btnTabApprovals').classList.add('bg-white/20');
+                loadPendingSchedules();
+            } else if (tabName === 'admin') {
+                document.getElementById('tabAdmin').classList.remove('hidden');
+                document.getElementById('btnTabAdmin').classList.add('bg-white/20');
+                switchAdminSubtab('users');
+            }
+        }
+
+        function getWeekDays(offset = 0) {
+            const now = new Date();
+            const currentDay = now.getDay();
+            const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+            const monday = new Date(now);
+            monday.setDate(now.getDate() + diffToMonday + (offset * 7));
+
+            const days = [];
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(monday);
+                d.setDate(monday.getDate() + i);
+                days.push(d);
+            }
+            return days;
+        }
+
+        function changeWeek(direction) {
+            currentWeekOffset += direction;
+            renderCalendar();
+        }
+
+        function goCurrentWeek() {
+            currentWeekOffset = 0;
+            renderCalendar();
+        }
+
+        async function renderCalendar() {
+            const weekDays = getWeekDays(currentWeekOffset);
+            const startStr = formatDateVN(weekDays[0]);
+            const endStr = formatDateVN(weekDays[6]);
+            document.getElementById('weekRangeLabel').innerText = `Tuần: ${startStr} - ${endStr}`;
+            document.getElementById('scheduleSubHeader').innerText = `(Từ ngày ${startStr} đến ngày ${endStr})`;
+
+            const deptFilter = document.getElementById('filterDepartment').value;
+            let url = '/api/schedules/public';
+            if (deptFilter !== 'all') {
+                url += `?department=${encodeURIComponent(deptFilter)}`;
+            }
+
+            try {
+                const res = await fetch(url);
+                const schedules = await res.json();
+                populateCalendarTable(weekDays, schedules);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function formatDateVN(d) {
+            return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+        }
+
+        function getIsoDate(d) {
+            return d.toISOString().split('T')[0];
+        }
+
+        const dayNames = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+
+        function populateCalendarTable(weekDays, schedules) {
+            const tbody = document.getElementById('scheduleTableBody');
+            tbody.innerHTML = '';
+
+            weekDays.forEach((day) => {
+                const isoDate = getIsoDate(day);
+                const dayMeetings = schedules.filter(s => s.date === isoDate);
+                const dayName = dayNames[day.getDay()];
+                const dateDisplay = formatDateVN(day);
+
+                if (dayMeetings.length === 0) {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-slate-50/50';
+                    row.innerHTML = `
+                        <td class="p-3 font-semibold text-slate-700 bg-slate-50/80 border-r border-slate-200">
+                            <div>${dayName}</div>
+                            <div class="text-xs text-slate-500 font-normal">${dateDisplay}</div>
+                        </td>
+                        <td class="p-3 text-center text-slate-400 italic text-xs border-r border-slate-200">-</td>
+                        <td class="p-3 text-slate-400 italic text-xs border-r border-slate-200">Không có lịch công tác</td>
+                        <td class="p-3 text-center text-slate-400 italic text-xs border-r border-slate-200">-</td>
+                        <td class="p-3 text-center text-slate-400 italic text-xs border-r border-slate-200">-</td>
+                        <td class="p-3 text-center text-slate-400 italic text-xs">-</td>
+                    `;
+                    tbody.appendChild(row);
+                } else {
+                    dayMeetings.forEach((m, idx) => {
+                        const row = document.createElement('tr');
+                        row.className = 'hover:bg-blue-50/40 transition';
+                        
+                        let dateCell = '';
+                        if (idx === 0) {
+                            dateCell = `
+                                <td rowspan="${dayMeetings.length}" class="p-3 font-semibold text-[#00529C] bg-blue-50/30 border-r border-slate-200 align-top">
+                                    <div class="font-bold">${dayName}</div>
+                                    <div class="text-xs text-slate-500 font-normal">${dateDisplay}</div>
+                                </td>
+                            `;
+                        }
+
+                        row.innerHTML = `
+                            ${dateCell}
+                            <td class="p-3 font-bold text-slate-700 border-r border-slate-200 whitespace-nowrap align-top">
+                                <span class="bg-slate-100 text-slate-800 px-2 py-0.5 rounded text-xs">
+                                    ${m.start_time} - ${m.end_time}
+                                </span>
+                            </td>
+                            <td class="p-3 font-medium text-slate-800 border-r border-slate-200 align-top">
+                                <div class="font-semibold text-slate-900">${m.title}</div>
+                                ${m.note ? `<div class="text-xs text-slate-500 italic mt-0.5"><i class="fa-solid fa-circle-exclamation text-amber-500 mr-1"></i>${m.note}</div>` : ''}
+                            </td>
+                            <td class="p-3 text-slate-700 border-r border-slate-200 align-top">
+                                <span class="inline-flex items-center gap-1 text-xs font-semibold bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded border border-emerald-200">
+                                    <i class="fa-solid fa-location-dot"></i> ${m.location}
+                                </span>
+                            </td>
+                            <td class="p-3 text-xs text-slate-700 border-r border-slate-200 align-top">
+                                <div class="font-semibold text-slate-900 bg-amber-50 text-amber-900 p-1 rounded border border-amber-200 mb-1">
+                                    <i class="fa-solid fa-user-tie mr-1 text-[#00529C]"></i> ${m.chairperson}
+                                </div>
+                                <div class="text-slate-600"><b>Triệu tập:</b> ${m.attendees}</div>
+                            </td>
+                            <td class="p-3 text-xs font-medium text-slate-600 align-top">
+                                <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-semibold">${m.department}</span>
+                                <div class="text-[11px] text-slate-400 mt-1">Duyệt: ${m.approved_by_name || 'Bí thư'}</div>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+            });
+
+            // Tự động lấy ngày Thứ Hai đầu tuần điền vào dòng ký
+            try {
+                if (weekDays && weekDays.length > 0) {
+                    const monday = weekDays[0];
+                    const day = monday.getDate();
+                    const month = monday.getMonth() + 1;
+                    const year = monday.getFullYear();
+                    const dateEl = document.getElementById('footerSigningDate');
+                    if (dateEl) {
+                        dateEl.innerText = `Ngày ${day < 10 ? '0' + day : day} tháng ${month < 10 ? '0' + month : month} năm ${year}`;
+                    }
+                }
+
+                // Tự động lấy tên và chức vụ của người phê duyệt lịch tuần
+                const approvedItem = (schedules && schedules.length > 0) ? schedules.find(s => s.approved_by_name && s.approved_by_name.trim() !== '') : null;
+                let approverName = approvedItem ? approvedItem.approved_by_name : (currentUser && currentUser.can_approve ? currentUser.full_name : 'Bí thư Đoàn');
+
+                const approverUser = (typeof usersList !== 'undefined' && usersList) ? usersList.find(u => u.full_name === approverName) : null;
+                let approverTitle = approverUser && approverUser.title ? approverUser.title.toUpperCase() : 'BÍ THƯ';
+
+                const nameEl = document.getElementById('footerApproverName');
+                const titleEl = document.getElementById('footerApproverTitle');
+                if (nameEl) nameEl.innerText = approverName;
+                if (titleEl) titleEl.innerText = approverTitle;
+            } catch (err) {
+                console.error("Lỗi cập nhật người ký:", err);
+            }
+        }
+
+        async function handleCreateSchedule(e) {
+            e.preventDefault();
+            const alertBox = document.getElementById('regAlert');
+            alertBox.classList.add('hidden');
+
+            const chairpersonVal = getFinalChairpersonValue();
+            if (!chairpersonVal) {
+                alertBox.className = 'p-3 rounded-lg text-sm font-medium bg-red-100 text-red-800 border border-red-300';
+                alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> Vui lòng chọn người chủ trì cuộc họp!`;
+                alertBox.classList.remove('hidden');
+                return;
+            }
+
+            const attendeesVal = getFinalAttendeesValue();
+            if (!attendeesVal) {
+                alertBox.className = 'p-3 rounded-lg text-sm font-medium bg-red-100 text-red-800 border border-red-300';
+                alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> Vui lòng chọn cán bộ hoặc nhập thành phần tham dự!`;
+                alertBox.classList.remove('hidden');
+                return;
+            }
+
+            const regDate = document.getElementById('regDate').value;
+            const regStartTime = document.getElementById('regStartTime').value;
+            const regEndTime = document.getElementById('regEndTime').value;
+
+            // Kiểm tra thời gian bắt đầu so với thời gian hiện tại
+            const startDateTime = new Date(`${regDate}T${regStartTime}:00`);
+            const now = new Date();
+
+            if (startDateTime < now) {
+                alertBox.className = 'p-3 rounded-lg text-sm font-medium bg-red-100 text-red-800 border border-red-300';
+                alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> Thời gian bắt đầu cuộc họp không được trước thời gian hiện tại! Vui lòng chọn lại ngày hoặc giờ.`;
+                alertBox.classList.remove('hidden');
+                return;
+            }
+
+            // Kiểm tra giờ kết thúc phải sau giờ bắt đầu
+            if (regEndTime <= regStartTime) {
+                alertBox.className = 'p-3 rounded-lg text-sm font-medium bg-red-100 text-red-800 border border-red-300';
+                alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> Giờ kết thúc (${regEndTime}) phải sau giờ bắt đầu (${regStartTime})!`;
+                alertBox.classList.remove('hidden');
+                return;
+            }
+
+            const payload = {
+                title: document.getElementById('regTitle').value.trim(),
+                date: regDate,
+                start_time: regStartTime,
+                end_time: regEndTime,
+                location: document.getElementById('regLocation').value,
+                department: document.getElementById('regDepartment').value || (currentUser ? currentUser.department : 'Văn phòng Đoàn'),
+                chairperson: chairpersonVal,
+                chairperson_name: getRawLeaderName(),
+                attendees: attendeesVal,
+                note: document.getElementById('regNote').value.trim(),
+                created_by_name: currentUser ? currentUser.full_name : 'Cán bộ',
+                role: currentUser ? currentUser.role : 'staff',
+                can_approve: currentUser ? currentUser.can_approve : 0
+            };
+
+            try {
+                const res = await fetch('/api/schedules', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    alertBox.className = 'p-3.5 rounded-lg text-sm font-semibold bg-red-100 text-red-800 border border-red-300';
+                    alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-base mr-1.5"></i> ${data.error}`;
+                    alertBox.classList.remove('hidden');
+                    return;
+                }
+
+                alertBox.className = 'p-3.5 rounded-lg text-sm font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300';
+                if (data.status === 'approved') {
+                    alertBox.innerHTML = `<i class="fa-solid fa-circle-check mr-1.5"></i> Cuộc họp đã được ban hành trực tiếp lên lịch công tác tuần!`;
+                } else {
+                    alertBox.innerHTML = `<i class="fa-solid fa-circle-check mr-1.5"></i> Đã gửi đăng ký thành công! Đang chờ Thường trực Bí thư phê duyệt.`;
+                }
+                alertBox.classList.remove('hidden');
+
+                document.getElementById('formRegisterSchedule').reset();
+                setInitialDate();
+                selectAllAttendees(false);
+                document.getElementById('customAttendeesInput').value = '';
+                renderAttendeesPreview();
+                document.getElementById('previewChairperson').innerText = 'Chưa chọn người chủ trì';
+                if (currentUser) {
+                    document.getElementById('regDepartment').value = currentUser.department;
+                }
+
+                setTimeout(() => {
+                    navigateTab('calendar');
+                }, 1500);
+
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadPendingCount() {
+            try {
+                const res = await fetch('/api/schedules');
+                const list = await res.json();
+                const pending = list.filter(s => s.status === 'pending');
+                const badge = document.getElementById('pendingBadge');
+                if (pending.length > 0) {
+                    badge.innerText = pending.length;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function loadPendingSchedules() {
+            loadPendingCount();
+            const container = document.getElementById('approvalsList');
+            container.innerHTML = '<div class="text-center py-6 text-slate-400">Đang kiểm tra dữ liệu và rà soát trùng lịch...</div>';
+
+            try {
+                const res = await fetch('/api/schedules');
+                const list = await res.json();
+                const pending = list.filter(s => s.status === 'pending');
+
+                if (pending.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-12 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                            <i class="fa-regular fa-circle-check text-4xl text-emerald-500 mb-2"></i>
+                            <p class="font-bold text-slate-700">Tất cả lịch tuần đã được xử lý hoàn tất!</p>
+                            <p class="text-xs text-slate-500">Hiện tại không có cuộc họp nào đang ở trạng thái chờ duyệt.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = '';
+                
+                for (const item of pending) {
+                    const checkRes = await fetch(`/api/schedules/${item.id}/check-conflict`);
+                    const checkData = await checkRes.json();
+
+                    const card = document.createElement('div');
+                    let conflictHtml = '';
+                    let borderClass = 'border-amber-200 bg-amber-50/40 hover:bg-amber-50';
+
+                    if (checkData.hasConflict) {
+                        borderClass = 'border-red-300 bg-red-50/60 shadow-sm';
+                        conflictHtml = `
+                            <div class="p-3 bg-red-100 border border-red-300 text-red-900 rounded-lg text-xs font-medium space-y-1 mt-2">
+                                <div class="font-bold flex items-center gap-1.5 text-red-800">
+                                    <i class="fa-solid fa-triangle-exclamation text-base"></i> PHÁT HIỆN TRÙNG LỊCH:
+                                </div>
+                                <div>${checkData.message}</div>
+                                <div class="text-[11px] text-red-700 font-semibold italic">Yêu cầu bấm nút "Yêu cầu sửa" để ban dời giờ hoặc đổi người chủ trì.</div>
+                            </div>
+                        `;
+                    }
+
+                    card.className = `p-4 rounded-xl border transition flex flex-col md:flex-row md:items-center justify-between gap-4 ${borderClass}`;
+                    card.innerHTML = `
+                        <div class="space-y-1.5 flex-1">
+                            <div class="flex items-center gap-2">
+                                <span class="bg-amber-200 text-amber-900 text-xs px-2 py-0.5 rounded font-bold uppercase">Chờ duyệt</span>
+                                <span class="text-xs font-semibold text-slate-500"><i class="fa-regular fa-clock mr-1"></i>${item.date} (${item.start_time} - ${item.end_time})</span>
+                                <span class="text-xs bg-blue-100 text-[#00529C] px-2 py-0.5 rounded font-medium">${item.department}</span>
+                            </div>
+                            <h4 class="font-bold text-slate-900 text-base">${item.title}</h4>
+                            <div class="text-xs text-slate-600 flex flex-wrap gap-x-4 gap-y-1">
+                                <div><b class="text-slate-700">Địa điểm:</b> ${item.location}</div>
+                                <div><b class="text-slate-700">Chủ trì:</b> <span class="text-blue-900 font-bold">${item.chairperson}</span></div>
+                                <div class="w-full mt-0.5"><b class="text-slate-700">Thành phần triệu tập:</b> ${item.attendees}</div>
+                                <div><b class="text-slate-700">Người gửi:</b> ${item.created_by_name}</div>
+                            </div>
+                            ${item.note ? `<div class="text-xs text-slate-500 italic mt-1 bg-white/60 p-2 rounded border border-slate-200">Ghi chú: ${item.note}</div>` : ''}
+                            ${conflictHtml}
+                        </div>
+                        <div class="flex items-center gap-2 self-end md:self-center shrink-0">
+                            <button onclick="approveSchedule(${item.id})" class="px-4 py-2 ${checkData.hasConflict ? 'bg-slate-400 hover:bg-slate-500' : 'bg-emerald-600 hover:bg-emerald-700'} text-white font-bold rounded-lg text-xs shadow flex items-center gap-1.5">
+                                <i class="fa-solid fa-check"></i> Duyệt ban hành
+                            </button>
+                            <button onclick="openRejectModal(${item.id}, '${checkData.hasConflict ? checkData.message.replace(/'/g, "\\'") : ''}')" class="px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg text-xs flex items-center gap-1 shadow">
+                                <i class="fa-solid fa-rotate-left"></i> Yêu cầu sửa
+                            </button>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function approveSchedule(id) {
+            if (!confirm('Đồng chí có chắc chắn muốn phê duyệt và ban hành cuộc họp này lên lịch công tác tuần?')) return;
+            try {
+                const res = await fetch(`/api/schedules/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: 'approved',
+                        approved_by_name: currentUser ? currentUser.full_name : 'Bí thư'
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    alert(data.error);
+                    loadPendingSchedules();
+                    return;
+                }
+                loadPendingSchedules();
+                loadUserNotifications();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function openRejectModal(id, defaultReason = '') {
+            document.getElementById('rejectScheduleId').value = id;
+            document.getElementById('rejectReasonInput').value = defaultReason ? `Trùng lịch: ${defaultReason}. Vui lòng dời khung giờ hoặc thay đổi người chủ trì.` : '';
+            document.getElementById('rejectModal').classList.remove('hidden');
+        }
+
+        function closeRejectModal() {
+            document.getElementById('rejectModal').classList.add('hidden');
+        }
+
+        async function confirmRejectSchedule() {
+            const id = document.getElementById('rejectScheduleId').value;
+            const reason = document.getElementById('rejectReasonInput').value.trim();
+            if (!reason) {
+                alert('Vui lòng nhập lý do từ chối / chỉnh sửa');
+                return;
+            }
+            try {
+                const res = await fetch(`/api/schedules/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: 'rejected',
+                        reject_reason: reason,
+                        approved_by_name: currentUser ? currentUser.full_name : 'Bí thư'
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    closeRejectModal();
+                    loadPendingSchedules();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // ================= ADMIN USERS LIST (VỚI NÚT SỬA & RESET MẬT KHẨU) =================
+        async function loadUsersList() {
+            const tbody = document.getElementById('userTableBody');
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-slate-400">Đang tải danh sách...</td></tr>';
+            try {
+                const res = await fetch('/api/users');
+                const users = await res.json();
+                usersList = users;
+                populateLeaderUsersSelect();
+                renderAttendeesTreeView();
+                populateGroupMemberCheckboxes();
+
+                tbody.innerHTML = '';
+                users.forEach(u => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-slate-50';
+                    
+                    let roleDisplay = '';
+                    if (u.role === 'admin') {
+                        roleDisplay = '<span class="bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-xs font-bold">Admin</span>';
+                    } else if (u.can_approve === 1 || u.role === 'approver') {
+                        roleDisplay = '<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-xs font-bold">Duyệt lịch</span>';
+                    } else {
+                        roleDisplay = '<span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs font-semibold">Đăng ký lịch</span>';
+                    }
+
+                    tr.innerHTML = `
+                        <td class="p-2.5">
+                            <div class="font-bold text-slate-800">${u.full_name}</div>
+                            <div class="text-xs text-blue-700 font-semibold">${u.title || 'Cán bộ'}</div>
+                        </td>
+                        <td class="p-2.5 text-slate-700">${u.department}</td>
+                        <td class="p-2.5 font-mono text-xs text-slate-600 font-semibold">${u.username}</td>
+                        <td class="p-2.5 text-center">${roleDisplay}</td>
+                        <td class="p-2.5 text-center">
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" ${u.can_approve ? 'checked' : ''} onchange="toggleApprovePermission(${u.id}, this.checked)" class="sr-only peer">
+                                <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600 relative"></div>
+                            </label>
+                        </td>
+                        <td class="p-2.5 text-right whitespace-nowrap">
+                            <div class="flex items-center justify-end gap-1.5">
+                                <button onclick='openEditUserModal(${JSON.stringify(u)})' class="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded text-xs font-semibold flex items-center gap-1" title="Chỉnh sửa họ tên, chức vụ, ban">
+                                    <i class="fa-regular fa-pen-to-square"></i> Sửa
+                                </button>
+                                <button onclick="adminResetPassword(${u.id}, '${u.full_name}')" class="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded text-xs font-semibold flex items-center gap-1" title="Đặt lại mật khẩu về 123456">
+                                    <i class="fa-solid fa-rotate-left"></i> Reset MK
+                                </button>
+                                ${u.username !== 'admin' ? `
+                                    <button onclick="deleteUser(${u.id}, '${u.full_name}')" class="p-1 text-red-500 hover:text-red-700" title="Xóa tài khoản">
+                                        <i class="fa-regular fa-trash-can"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function toggleApprovePermission(userId, canApprove) {
+            try {
+                await fetch(`/api/users/${userId}/toggle-approve`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ can_approve: canApprove })
+                });
+                loadUsersList();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function handleCreateUser(e) {
+            e.preventDefault();
+            const roleSelectVal = document.getElementById('newRoleSelect').value;
+            const canApproveVal = document.getElementById('newCanApprove').checked;
+
+            const payload = {
+                username: document.getElementById('newUsername').value.trim(),
+                password: document.getElementById('newPassword').value,
+                full_name: document.getElementById('newFullName').value.trim(),
+                title: document.getElementById('newTitle').value,
+                department: document.getElementById('newDepartment').value,
+                role: roleSelectVal,
+                can_approve: canApproveVal ? 1 : 0
+            };
+
+            if (!payload.title) {
+                alert('Vui lòng chọn Chức vụ cho cán bộ!');
+                return;
+            }
+            if (!payload.department) {
+                alert('Vui lòng chọn Ban / Đơn vị!');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    alert(data.error);
+                    return;
+                }
+                alert('Tạo tài khoản cán bộ thành công!');
+                await loadAllUsers();
+                loadUsersList();
+                e.target.reset();
+                document.getElementById('newPassword').value = '123456';
+                document.getElementById('newRoleSelect').value = 'staff';
+                document.getElementById('newCanApprove').checked = false;
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function deleteUser(id, name) {
+            if (!confirm(`Đồng chí có chắc chắn muốn xóa tài khoản "${name}"? Lưu ý: Nếu cán bộ quên mật khẩu, hãy dùng nút Reset MK thay vì xóa.`)) return;
+            try {
+                await fetch(`/api/users/${id}`, { method: 'DELETE' });
+                await loadAllUsers();
+                loadUsersList();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // ================= MANUAL LOGIN =================
+        function openLoginModal() {
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('loginError').classList.add('hidden');
+            document.getElementById('loginModal').classList.remove('hidden');
+        }
+        function closeLoginModal() {
+            document.getElementById('loginModal').classList.add('hidden');
+        }
+
+        async function handleManualLogin(e) {
+            e.preventDefault();
+            const errBox = document.getElementById('loginError');
+            errBox.classList.add('hidden');
+
+            const u = document.getElementById('loginUsername').value.trim();
+            const p = document.getElementById('loginPassword').value;
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: u, password: p })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    errBox.innerText = data.error;
+                    errBox.classList.remove('hidden');
+                    return;
+                }
+                currentUser = data.user;
+                closeLoginModal();
+                applyUserRole();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+    </script>
+</body>
+</html>
