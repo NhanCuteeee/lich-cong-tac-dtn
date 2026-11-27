@@ -251,13 +251,18 @@ app.patch('/api/users/:id/toggle-approve', (req, res) => {
 
 // API XÓA TÀI KHOẢN CÁN BỘ (HỖ TRỢ ĐỒNG THỜI SỐ VÀ CHUỖI, CHẶN XÓA ADMIN)
 app.delete('/api/users/:id', (req, res) => {
-    const rawId = req.params.id;
-    const numId = Number(rawId);
+    const idParam = String(req.params.id).trim();
+    const numId = parseInt(idParam, 10);
 
-    db.run('DELETE FROM users WHERE (id = ? OR id = ?) AND username != "admin"', [rawId, numId], function(err) {
+    if (isNaN(numId)) {
+        return res.status(400).json({ error: 'ID tài khoản không hợp lệ' });
+    }
+
+    // Chạy câu lệnh xóa với tham số số nguyên chuẩn, chặn xóa tài khoản admin
+    db.run('DELETE FROM users WHERE id = ? AND username != "admin"', [numId], function(err) {
         if (err) {
-            console.error("Lỗi xóa tài khoản:", err.message);
-            return res.status(500).json({ error: 'Lỗi máy chủ khi xóa tài khoản' });
+            console.error("Chi tiết lỗi xóa user từ DB:", err);
+            return res.status(500).json({ error: 'Lỗi truy vấn cơ sở dữ liệu: ' + (err.message || err) });
         }
         res.json({ success: true });
     });
