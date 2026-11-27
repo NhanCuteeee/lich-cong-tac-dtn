@@ -201,9 +201,16 @@ app.post('/api/locations', (req, res) => {
     });
 });
 
-app.delete('/api/locations/:id', (req, res) => {
-    db.run("DELETE FROM locations WHERE id = ?", [req.params.id], function(err) {
-        if (err) return res.status(500).json({ error: 'Lỗi xóa địa điểm' });
+app.delete('/api/users/:id', (req, res) => {
+    const rawId = req.params.id;
+    const numId = Number(rawId);
+
+    // Xóa theo cả số và chuỗi để đảm bảo nhận diện chính xác ID trên Turso
+    db.run('DELETE FROM users WHERE (id = ? OR id = ?) AND username != "admin"', [rawId, numId], function(err) {
+        if (err) {
+            console.error("Lỗi xóa tài khoản:", err.message);
+            return res.status(500).json({ error: 'Lỗi máy chủ khi xóa' });
+        }
         res.json({ success: true });
     });
 });
