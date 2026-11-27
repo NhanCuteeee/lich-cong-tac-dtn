@@ -1,2866 +1,490 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Đoàn Trường Cao đẳng Tiền Giang - Hệ Thống Lịch Công Tác Tuần</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap');
-        body { font-family: 'Be Vietnam Pro', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
-        
-        /* Hiệu ứng mượt mà cho menu trượt di động */
-        #mobileMenuDrawer {
-            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        /* Tùy biến thanh cuộn trên mobile */
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-
-        @media print {
-            .no-print { display: none !important; }
-            .print-only { display: block !important; }
-            body { background: white !important; padding: 0 !important; }
-            .print-border { border: 1px solid #000 !important; }
-        }
-    </style>
-</head>
-<body class="min-h-screen text-slate-800 flex flex-col antialiased">
-
-    <!-- Main Navigation Bar -->
-    <nav class="no-print bg-[#00529C] text-white shadow-md sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex items-center justify-between">
-            <div class="flex items-center space-x-2.5 cursor-pointer select-none" onclick="navigateTab('calendar')">
-                <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white flex items-center justify-center p-0.5 shadow-md border-2 border-yellow-400 shrink-0">
-                    <img src="https://upload.wikimedia.org/wikipedia/vi/0/09/Huy_Hi%E1%BB%87u_%C4%90o%C3%A0n.png?utm_source=vi.wikipedia.org&utm_campaign=index&utm_content=thumbnail_unscaled&_=20210321041456" 
-                         onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Huy_Hi%E1%BB%87u_%C4%90o%C3%A0n.svg/200px-Huy_Hi%E1%BB%87u_%C4%90o%C3%A0n.svg.png'" 
-                         alt="Huy hiệu Đoàn TNCS Hồ Chí Minh" class="w-8 h-8 sm:w-9 sm:h-9 object-contain hover:scale-105 transition-transform">
-                </div>
-                <div class="overflow-hidden">
-                    <div class="text-[10px] sm:text-[11px] font-bold text-yellow-300 uppercase tracking-wider truncate">ĐOÀN TRƯỜNG CAO ĐẲNG TIỀN GIANG</div>
-                    <h1 class="font-extrabold text-xs sm:text-base leading-tight uppercase tracking-tight text-white truncate drop-shadow-sm">HỆ THỐNG LỊCH CÔNG TÁC TUẦN</h1>
-                </div>
-            </div>
-
-            <div class="flex items-center space-x-1.5 sm:space-x-2">
-                <!-- Nút điều hướng desktop -->
-                <div class="hidden md:flex items-center space-x-1">
-                    <button onclick="navigateTab('calendar')" id="btnTabCalendar" class="nav-btn px-3 py-1.5 rounded-lg text-sm font-medium transition bg-white/20 text-white flex items-center gap-1.5">
-                        <i class="fa-regular fa-calendar-days"></i> <span>Lịch tuần</span>
-                    </button>
-                    <button onclick="navigateTab('register')" id="btnTabRegister" class="hidden nav-btn px-3 py-1.5 rounded-lg text-sm font-medium transition hover:bg-white/10 text-white flex items-center gap-1.5">
-                        <i class="fa-solid fa-calendar-plus"></i> <span>Đăng ký lịch</span>
-                    </button>
-                    <button onclick="navigateTab('mySchedules')" id="btnTabMySchedules" class="hidden nav-btn px-3 py-1.5 rounded-lg text-sm font-medium transition hover:bg-white/10 text-white flex items-center gap-1.5 relative">
-                        <i class="fa-solid fa-clock-rotate-left"></i> <span>Lịch chờ duyệt</span>
-                        <span id="myPendingBadge" class="hidden ml-1 px-1.5 py-0.2 bg-amber-400 text-slate-900 text-xs font-bold rounded-full">0</span>
-                    </button>
-                    <button onclick="navigateTab('approvals')" id="btnTabApprovals" class="hidden nav-btn px-3 py-1.5 rounded-lg text-sm font-medium transition hover:bg-white/10 text-white flex items-center gap-1.5 relative">
-                        <i class="fa-solid fa-clipboard-check"></i> <span>Duyệt lịch</span>
-                        <span id="pendingBadge" class="hidden ml-1 px-1.5 py-0.2 bg-amber-400 text-slate-900 text-xs font-bold rounded-full">0</span>
-                    </button>
-                    <button onclick="navigateTab('admin')" id="btnTabAdmin" class="hidden nav-btn px-3 py-1.5 rounded-lg text-sm font-medium transition hover:bg-white/10 text-white flex items-center gap-1.5">
-                        <i class="fa-solid fa-users-gear"></i> <span>Quản trị Admin</span>
-                    </button>
-                </div>
-
-                <!-- Chuông thông báo cá nhân -->
-                <div id="notifBellWrapper" class="hidden relative">
-                    <button onclick="toggleNotificationPanel()" class="relative p-2 text-white hover:bg-white/10 rounded-lg text-base">
-                        <i class="fa-regular fa-bell"></i>
-                        <span id="notifBadge" class="hidden absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full animate-ping"></span>
-                        <span id="notifCountBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full shadow">0</span>
-                    </button>
-
-                    <!-- Popup dropdown thông báo -->
-                    <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-72 sm:w-96 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 text-slate-800 text-xs overflow-hidden">
-                        <div class="p-3 bg-blue-50 border-b border-blue-100 flex items-center justify-between">
-                            <span class="font-bold text-blue-900 flex items-center gap-1.5">
-                                <i class="fa-solid fa-bell text-[#00529C]"></i> Thông báo Lịch họp của bạn
-                            </span>
-                            <button onclick="markAllNotificationsRead()" class="text-[11px] text-blue-600 hover:underline font-semibold">Đã đọc tất cả</button>
-                        </div>
-                        <div id="notifListContainer" class="max-h-72 overflow-y-auto divide-y divide-slate-100 p-1">
-                            <div class="text-center py-6 text-slate-400 italic">Không có thông báo cuộc họp mới</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Nút Đăng nhập desktop -->
-                <div id="loginSection">
-                    <button onclick="openLoginModal()" class="bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-3 py-1.5 rounded-lg text-xs sm:text-sm shadow transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-right-to-bracket"></i> <span>Đăng nhập</span>
-                    </button>
-                </div>
-
-                <!-- Nút Đổi MK / Đăng xuất desktop -->
-                <div id="userMenuSection" style="display: none;" class="flex items-center gap-1.5">
-                    <button onclick="openChangePasswordModal()" title="Đổi mật khẩu" class="bg-white/10 hover:bg-white/20 text-white px-2 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1">
-                        <i class="fa-solid fa-key text-amber-300"></i>
-                    </button>
-                    <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-2.5 py-1.5 rounded-lg text-xs font-medium shadow transition flex items-center gap-1">
-                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                    </button>
-                </div>
-
-                <!-- NÚT MENU HAMBURGER CHO DI ĐỘNG -->
-                <button type="button" onclick="toggleMobileMenu()" class="md:hidden p-2 text-white hover:bg-white/15 rounded-lg focus:outline-none">
-                    <i class="fa-solid fa-bars text-lg"></i>
-                </button>
-            </div>
-        </div>
-
-        <!-- MOBILE MENU OVERLAY & DRAWER -->
-        <div id="mobileMenuOverlay" onclick="toggleMobileMenu()" class="fixed inset-0 bg-slate-900/60 z-50 hidden backdrop-blur-xs"></div>
-        <div id="mobileMenuDrawer" class="fixed top-0 right-0 w-64 max-w-[80%] h-full bg-white text-slate-800 z-50 shadow-2xl transform translate-x-full flex flex-col md:hidden">
-            <div class="p-4 bg-[#00529C] text-white flex items-center justify-between">
-                <div class="font-bold text-sm flex items-center gap-2">
-                    <i class="fa-solid fa-calendar-days text-yellow-300"></i> Menu Chức Năng
-                </div>
-                <button onclick="toggleMobileMenu()" class="text-white hover:text-slate-200 text-lg p-1">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-
-            <div class="p-3 space-y-1.5 flex-1 overflow-y-auto">
-                <button onclick="navigateTab('calendar'); toggleMobileMenu();" class="w-full text-left px-3 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-50 text-blue-900 flex items-center gap-2.5">
-                    <i class="fa-regular fa-calendar-days w-5 text-center text-[#00529C]"></i> Xem lịch tuần
-                </button>
-                <button id="btnMobRegister" onclick="navigateTab('register'); toggleMobileMenu();" class="hidden w-full text-left px-3 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-50 text-blue-900 flex items-center gap-2.5">
-                    <i class="fa-solid fa-calendar-plus w-5 text-center text-blue-600"></i> Đăng ký lịch mới
-                </button>
-                <button id="btnMobMySched" onclick="navigateTab('mySchedules'); toggleMobileMenu();" class="hidden w-full text-left px-3 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-50 text-blue-900 flex items-center justify-between">
-                    <div class="flex items-center gap-2.5">
-                        <i class="fa-solid fa-clock-rotate-left w-5 text-center text-amber-600"></i> Lịch chờ duyệt
-                    </div>
-                    <span id="mobMyPendingBadge" class="hidden px-2 py-0.5 bg-amber-400 text-slate-900 text-xs font-bold rounded-full">0</span>
-                </button>
-                <button id="btnMobApprovals" onclick="navigateTab('approvals'); toggleMobileMenu();" class="hidden w-full text-left px-3 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-50 text-blue-900 flex items-center justify-between">
-                    <div class="flex items-center gap-2.5">
-                        <i class="fa-solid fa-clipboard-check w-5 text-center text-emerald-600"></i> Phê duyệt lịch
-                    </div>
-                    <span id="mobPendingBadge" class="hidden px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">0</span>
-                </button>
-                <button id="btnMobAdmin" onclick="navigateTab('admin'); toggleMobileMenu();" class="hidden w-full text-left px-3 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-50 text-blue-900 flex items-center gap-2.5">
-                    <i class="fa-solid fa-users-gear w-5 text-center text-purple-600"></i> Quản trị Admin
-                </button>
-            </div>
-
-            <!-- Footer của Mobile Drawer -->
-            <div class="p-3 border-t border-slate-200 bg-slate-50 space-y-2">
-                <div id="mobLoginSection" style="display: block;">
-                    <button onclick="openLoginModal(); toggleMobileMenu();" class="w-full py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold rounded-lg text-sm shadow flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-right-to-bracket"></i> Đăng nhập Cán bộ
-                    </button>
-                </div>
-                <div id="mobUserSection" style="display: none;" class="hidden space-y-2">
-                    <div id="mobUserNameDisplay" class="text-xs font-bold text-slate-700 truncate px-1"></div>
-                    <button onclick="openChangePasswordModal(); toggleMobileMenu();" class="w-full py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold rounded-lg text-xs flex items-center justify-center gap-1.5">
-                        <i class="fa-solid fa-key text-amber-600"></i> Đổi mật khẩu
-                    </button>
-                    <button onclick="logout(); toggleMobileMenu();" class="w-full py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg text-xs flex items-center justify-center gap-1.5 shadow">
-                        <i class="fa-solid fa-arrow-right-from-bracket"></i> Đăng xuất
-                    </button>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Subheader Notice Bar -->
-    <div class="no-print bg-blue-50 border-b border-blue-100 py-1.5 px-3 text-xs text-blue-900">
-        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-1.5">
-            <div class="flex items-center gap-1.5 leading-tight">
-                <i class="fa-solid fa-circle-info text-[#00529C] shrink-0"></i>
-                <span id="accessNoticeText">Chế độ xem công khai: Đoàn viên xem lịch họp đã duyệt mà không cần đăng nhập.</span>
-            </div>
-            <div class="hidden sm:flex items-center gap-3">
-                <button onclick="window.print()" class="text-[#00529C] hover:underline font-semibold flex items-center gap-1">
-                    <i class="fa-solid fa-print"></i> In lịch công tác
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MAIN CONTAINER -->
-    <main class="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 flex-1 w-full">
-        
-        <!-- ================= TAB 1: CALENDAR VIEW ================= -->
-        <section id="tabCalendar" class="space-y-4 sm:space-y-6">
-            <!-- Bộ điều khiển Tuần & Lọc (Tối ưu full chiều ngang trên mobile) -->
-            <div class="no-print bg-white p-3 sm:p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-                <div class="flex items-center justify-between sm:justify-start gap-1.5 sm:gap-2">
-                    <button onclick="changeWeek(-1)" class="flex-1 sm:flex-none px-2.5 py-2 rounded-lg border border-slate-300 hover:bg-slate-100 text-xs sm:text-sm font-semibold text-slate-700 flex items-center justify-center gap-1">
-                        <i class="fa-solid fa-chevron-left"></i> <span class="hidden sm:inline">Tuần trước</span>
-                    </button>
-                    <button onclick="goCurrentWeek()" class="flex-1 sm:flex-none px-3 py-2 rounded-lg bg-blue-50 text-[#00529C] border border-blue-200 font-bold text-xs sm:text-sm hover:bg-blue-100 text-center">
-                        Hiện tại
-                    </button>
-                    <button onclick="changeWeek(1)" class="flex-1 sm:flex-none px-2.5 py-2 rounded-lg border border-slate-300 hover:bg-slate-100 text-xs sm:text-sm font-semibold text-slate-700 flex items-center justify-center gap-1">
-                        <span class="hidden sm:inline">Tuần tới</span> <i class="fa-solid fa-chevron-right"></i>
-                    </button>
-                </div>
-
-                <div class="text-center font-bold text-xs sm:text-sm text-slate-800 bg-slate-50 py-1.5 px-3 rounded-lg border border-slate-200" id="weekRangeLabel">
-                    Tuần: Đang tải...
-                </div>
-
-                <div class="flex items-center gap-2">
-                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0">Lọc Ban:</label>
-                    <select id="filterDepartment" onchange="renderCalendar()" class="w-full sm:w-auto bg-white border border-slate-300 text-xs sm:text-sm rounded-lg px-2.5 py-2 outline-none focus:ring-2 focus:ring-blue-500 font-medium">
-                        <option value="all">Tất cả các ban / đơn vị</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Khung Lịch Công Tác Chính -->
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <!-- Tiêu đề văn bản hành chính -->
-                <div class="p-4 sm:p-6 border-b border-slate-200 bg-gradient-to-b from-slate-50 to-white">
-                    <div class="flex flex-col sm:flex-row items-center justify-between text-center sm:text-left gap-3">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white flex items-center justify-center p-0.5 shadow-sm border border-slate-200 shrink-0">
-                                <img src="https://upload.wikimedia.org/wikipedia/vi/0/09/Huy_Hi%E1%BB%87u_%C4%90o%C3%A0n.png?utm_source=vi.wikipedia.org&utm_campaign=index&utm_content=thumbnail_unscaled&_=20210321041456" 
-                                     alt="Huy hiệu Đoàn" class="w-8 h-8 sm:w-10 sm:h-10 object-contain">
-                            </div>
-                            <div>
-                                <p class="font-bold text-[10px] sm:text-xs uppercase tracking-wider text-slate-700">ĐOÀN TNCS HỒ CHÍ MINH TỈNH ĐỒNG THÁP</p>
-                                <p class="font-extrabold text-xs sm:text-sm text-[#00529C] uppercase">BCH ĐOÀN TRƯỜNG CAO ĐẲNG TIỀN GIANG</p>
-                            </div>
-                        </div>
-                        <div class="text-center hidden sm:block">
-                            <p class="font-bold text-sm uppercase tracking-wide text-slate-800">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
-                            <p class="font-semibold text-xs text-slate-600 underline decoration-slate-400 underline-offset-4">Độc lập - Tự do - Hạnh phúc</p>
-                        </div>
-                    </div>
-                    <div class="mt-3 sm:mt-4 text-center">
-                        <h2 class="text-base sm:text-2xl font-black uppercase tracking-tight text-[#00529C]">LỊCH CÔNG TÁC TUẦN</h2>
-                        <p id="scheduleSubHeader" class="text-xs sm:text-sm text-slate-700 italic font-medium mt-0.5">Đang tải tuần làm việc...</p>
-                    </div>
-                </div>
-
-                <!-- 1. GIAO DIỆN BẢNG DÀNH CHO MÀN HÌNH MÁY TÍNH & IN ẤN (md:block) -->
-                <div class="hidden md:block overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-sm">
-                        <thead>
-                            <tr class="bg-blue-50 text-[#00529C] border-b border-blue-200 text-xs font-bold uppercase tracking-wider">
-                                <th class="p-3 w-32 border-r border-blue-100">Thứ / Ngày</th>
-                                <th class="p-3 w-28 border-r border-blue-100">Thời gian</th>
-                                <th class="p-3 border-r border-blue-100">Nội dung công việc / Cuộc họp</th>
-                                <th class="p-3 w-48 border-r border-blue-100">Địa điểm / Phòng họp</th>
-                                <th class="p-3 w-56 border-r border-blue-100">Chủ trì & Triệu tập</th>
-                                <th class="p-3 w-36">Ban chuẩn bị</th>
-                            </tr>
-                        </thead>
-                        <tbody id="scheduleTableBody" class="divide-y divide-slate-200">
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- 2. GIAO DIỆN DẠNG THẺ (CARD VIEW) DÀNH RIÊNG CHO ĐIỆN THOẠI (md:hidden) -->
-                <div id="scheduleMobileCards" class="block md:hidden p-3 space-y-3 bg-slate-50/50">
-                    <!-- Sẽ được hàm populateCalendarTable render tự động -->
-                </div>
-
-                <!-- Phần ký tên xác nhận ở chân trang -->
-                <div class="p-4 sm:p-6 border-t border-slate-200 bg-slate-50 flex justify-between items-start text-xs sm:text-sm">
-                    <div class="space-y-0.5 text-slate-600 text-[11px] sm:text-xs">
-                        <p class="font-bold text-slate-700">Nơi nhận:</p>
-                        <p>- Ban Thường vụ, BCH Đoàn trường;</p>
-                        <p>- Các Đoàn khoa, Chi đoàn;</p>
-                        <p>- Lưu: VP Đoàn./.</p>
-                    </div>
-                    <div class="text-center space-y-0.5">
-                        <p id="footerSigningDate" class="italic text-slate-600 text-[11px] sm:text-xs">Ngày ... tháng ... năm 2026</p>
-                        <p class="font-bold text-slate-800 uppercase tracking-wider text-[11px] sm:text-xs">TM. BAN THƯỜNG VỤ ĐOÀN TRƯỜNG</p>
-                        <p id="footerApproverTitle" class="font-extrabold text-[#00529C] text-xs sm:text-sm">BÍ THƯ</p>
-                        <div class="h-10 sm:h-14 flex items-center justify-center">
-                            <span class="text-[10px] sm:text-xs text-slate-400 italic">(Đã duyệt số hóa)</span>
-                        </div>
-                        <p id="footerApproverName" class="font-bold text-slate-800 text-xs sm:text-sm">Nguyễn Văn An</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ================= TAB: LỊCH CHỜ DUYỆT (CÁ NHÂN) ================= -->
-        <section id="tabMySchedules" class="hidden space-y-4 sm:space-y-6">
-            <div class="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200">
-                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3 mb-4">
-                    <div>
-                        <h2 class="text-base sm:text-lg font-bold text-slate-800 flex items-center gap-2">
-                            <span>Lịch Đã Đăng Ký Của Tôi</span>
-                            <span class="text-xs bg-blue-100 text-[#00529C] px-2 py-0.5 rounded font-bold">Cá nhân</span>
-                        </h2>
-                        <p class="text-xs text-slate-500">Xem tiến độ duyệt lịch họp tuần do bạn gửi.</p>
-                    </div>
-                    <button onclick="loadMySchedulesList()" class="text-xs px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold flex items-center gap-1">
-                        <i class="fa-solid fa-rotate"></i> Làm mới
-                    </button>
-                </div>
-
-                <div id="mySchedulesListContainer" class="space-y-3">
-                </div>
-            </div>
-        </section>
-
-        <!-- ================= TAB 2: REGISTER SCHEDULE ================= -->
-        <section id="tabRegister" class="hidden space-y-4 sm:space-y-6 max-w-3xl mx-auto">
-            <div class="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200">
-                <div class="flex items-center gap-3 border-b border-slate-200 pb-3 mb-4 sm:mb-6">
-                    <div class="w-10 h-10 rounded-lg bg-blue-100 text-[#00529C] flex items-center justify-center text-lg shrink-0">
-                        <i class="fa-solid fa-calendar-plus"></i>
-                    </div>
-                    <div>
-                        <h2 class="text-base sm:text-lg font-bold text-slate-800 leading-tight">Đăng Ký Lịch Họp / Hoạt Động Tuần</h2>
-                        <p class="text-xs text-slate-500">Lịch gửi sẽ được Bí thư / Phó Bí thư xét duyệt trước khi ban hành.</p>
-                    </div>
-                </div>
-
-                <form id="formRegisterSchedule" onsubmit="handleCreateSchedule(event)" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Nội dung cuộc họp (*)</label>
-                        <input type="text" id="regTitle" required placeholder="VD: Họp Ban Thường vụ chuẩn bị Tháng Thanh niên..." 
-                               class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Ngày diễn ra (*)</label>
-                            <input type="date" id="regDate" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Giờ bắt đầu (*)</label>
-                            <input type="time" id="regStartTime" value="08:00" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Giờ kết thúc (*)</label>
-                            <input type="time" id="regEndTime" value="10:00" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <div class="flex items-center justify-between mb-1">
-                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Địa điểm / Phòng họp (*)</label>
-                            </div>
-                            <select id="regLocation" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-medium">
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                                Ban đăng ký (*)
-                            </label>
-                            <input type="text" id="regDepartment" readonly 
-                                   class="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-sm font-bold text-slate-700 cursor-not-allowed">
-                        </div>
-                    </div>
-
-                    <!-- CHỦ TRÌ -->
-                    <div class="bg-blue-50/60 p-3 sm:p-3.5 rounded-xl border border-blue-200/80 space-y-2.5">
-                        <div class="flex flex-wrap items-center justify-between gap-1.5">
-                            <label class="block text-xs font-bold text-blue-900 uppercase tracking-wider">
-                                <i class="fa-solid fa-user-tie mr-1 text-[#00529C]"></i> Người chủ trì cuộc họp (*)
-                            </label>
-                            <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-slate-600">
-                                <input type="checkbox" id="chkCustomChairperson" onchange="toggleCustomChairperson(this.checked)" class="rounded text-blue-600">
-                                <span>Nhập tay tự do</span>
-                            </label>
-                        </div>
-
-                        <div id="selectChairpersonMode" class="space-y-2">
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                                <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Chọn Cán bộ:</label>
-                                    <select id="selectLeaderUser" onchange="onSelectLeaderChange()" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none">
-                                        <option value="">-- Bấm để chọn người chủ trì --</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Chức vụ hiển thị:</label>
-                                    <select id="selectLeaderTitle" onchange="updateGeneratedChairperson()" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none">
-                                        <option value="">-- Giữ chức vụ theo hồ sơ --</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="text-xs text-slate-600 flex items-center gap-1.5 bg-white px-3 py-2 rounded-lg border border-slate-200">
-                                <span class="font-semibold text-slate-500 shrink-0">Hiển thị:</span>
-                                <span id="previewChairperson" class="font-bold text-[#00529C] truncate">Chưa chọn</span>
-                            </div>
-                        </div>
-
-                        <div id="customChairpersonMode" class="hidden">
-                            <input type="text" id="customChairpersonInput" placeholder="VD: Đ/c Trần Văn X - Bí thư Đảng ủy..." 
-                                   class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                        </div>
-                    </div>
-
-                    <!-- THÀNH PHẦN THAM DỰ -->
-                    <div class="bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 space-y-3">
-                        <div class="flex flex-wrap items-center justify-between gap-1.5 border-b border-slate-200 pb-2">
-                            <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                                <i class="fa-solid fa-folder-tree text-[#00529C]"></i> Thành phần tham dự (*)
-                            </label>
-                            <div class="flex items-center gap-2 text-[11px]">
-                                <button type="button" onclick="expandCollapseAllTrees(true)" class="text-blue-600 hover:underline font-medium">Mở tất cả</button>
-                                <span class="text-slate-300">|</span>
-                                <button type="button" onclick="expandCollapseAllTrees(false)" class="text-slate-500 hover:underline font-medium">Thu gọn</button>
-                            </div>
-                        </div>
-
-                        <div id="attendeesTreeContainer" class="bg-white border border-slate-300 rounded-lg p-2 max-h-56 overflow-y-auto space-y-2 text-xs">
-                        </div>
-
-                        <div class="bg-white p-2.5 rounded-lg border border-blue-200">
-                            <div class="flex items-center justify-between mb-1.5">
-                                <span class="text-xs font-bold text-blue-900">
-                                    Đã chọn (<span id="selectedCountBadge">0</span> cán bộ):
-                                </span>
-                                <button type="button" onclick="clearAllSelectedAttendees()" class="text-[11px] text-red-500 hover:underline font-semibold">
-                                    Bỏ chọn tất cả
-                                </button>
-                            </div>
-                            <div id="selectedAttendeesTags" class="flex flex-wrap gap-1 min-h-[24px] items-center">
-                                <span class="text-xs text-slate-400 italic">Chưa chọn cán bộ nào</span>
-                            </div>
-                        </div>
-
-                        <div>
-                            <span class="text-xs font-semibold text-slate-700 block mb-1">Khách mời / Thành phần ngoài (nếu có):</span>
-                            <input type="text" id="customAttendeesInput" oninput="renderAttendeesPreview()" 
-                                   placeholder="VD: Đoàn viên các Chi đoàn, khách mời..." 
-                                   class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none">
-                        </div>
-
-                        <div class="text-xs bg-blue-50/80 p-2.5 rounded-lg border border-blue-200 text-slate-700">
-                            <div class="font-bold text-[#00529C] mb-0.5">Hiển thị trên lịch:</div>
-                            <div id="combinedAttendeesPreview" class="italic text-slate-600">Chưa chọn thành phần tham dự</div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Ghi chú / Trang phục</label>
-                        <textarea id="regNote" rows="2" placeholder="VD: Mang theo sổ tay, mặc áo Thanh niên Việt Nam..." 
-                                  class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
-                    </div>
-
-                    <div id="regAlert" class="hidden p-3 rounded-lg text-sm font-medium"></div>
-
-                    <div class="flex flex-col sm:flex-row justify-end gap-2 pt-3 border-t border-slate-200">
-                        <button type="button" onclick="navigateTab('calendar')" class="w-full sm:w-auto px-4 py-2.5 border border-slate-300 rounded-lg text-sm font-semibold hover:bg-slate-50 text-center">Hủy</button>
-                        <button type="submit" class="w-full sm:w-auto px-5 py-2.5 bg-[#00529C] hover:bg-blue-700 text-white font-bold rounded-lg text-sm shadow text-center">
-                            <i class="fa-solid fa-paper-plane mr-1.5"></i> Gửi đăng ký duyệt
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </section>
-
-        <!-- ================= TAB 3: APPROVALS ================= -->
-        <section id="tabApprovals" class="hidden space-y-4 sm:space-y-6">
-            <div class="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200">
-                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3 mb-4">
-                    <div>
-                        <h2 class="text-base sm:text-lg font-bold text-slate-800 flex items-center gap-2">
-                            <span>Phê Duyệt Lịch Tuần</span>
-                            <span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold">Thường trực Đoàn</span>
-                        </h2>
-                        <p class="text-xs text-slate-500">Rà soát trùng lịch và ban hành lên lịch tuần.</p>
-                    </div>
-                    <button onclick="loadPendingSchedules()" class="text-xs px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold flex items-center gap-1">
-                        <i class="fa-solid fa-rotate"></i> Làm mới
-                    </button>
-                </div>
-
-                <div id="approvalsList" class="space-y-3">
-                </div>
-            </div>
-        </section>
-
-        <!-- ================= TAB 4: ADMIN ================= -->
-        <section id="tabAdmin" class="hidden space-y-4 sm:space-y-6">
-            <div class="flex border-b border-slate-200 space-x-2 sm:space-x-3 overflow-x-auto pb-1.5 text-xs sm:text-sm">
-                <button onclick="switchAdminSubtab('users')" id="subtabBtnUsers" class="pb-2 border-b-2 border-[#00529C] text-[#00529C] font-bold whitespace-nowrap">
-                    <i class="fa-solid fa-users mr-1"></i> Cán bộ
-                </button>
-                <button onclick="switchAdminSubtab('locs')" id="subtabBtnLocs" class="pb-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-semibold whitespace-nowrap">
-                    <i class="fa-solid fa-location-dot mr-1"></i> Phòng họp
-                </button>
-                <button onclick="switchAdminSubtab('groups')" id="subtabBtnGroups" class="pb-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-semibold whitespace-nowrap">
-                    <i class="fa-solid fa-layer-group mr-1"></i> Nhóm triệu tập
-                </button>
-                <button onclick="switchAdminSubtab('depts')" id="subtabBtnDepts" class="pb-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-semibold whitespace-nowrap">
-                    <i class="fa-solid fa-sitemap mr-1"></i> Ban / Đơn vị
-                </button>
-                <button onclick="switchAdminSubtab('titles')" id="subtabBtnTitles" class="pb-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-semibold whitespace-nowrap">
-                    <i class="fa-solid fa-id-badge mr-1"></i> Chức vụ
-                </button>
-            </div>
-
-            <!-- SUBPANEL 1: USERS -->
-            <div id="adminPanelUsers" class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-                <div class="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200 h-fit">
-                    <h3 class="text-sm sm:text-base font-bold text-slate-800 flex items-center gap-2 mb-3">
-                        <i class="fa-solid fa-user-plus text-[#00529C]"></i> Thêm Cán bộ Đoàn
-                    </h3>
-                    <form onsubmit="handleCreateUser(event)" class="space-y-3">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Tài khoản (*)</label>
-                            <input type="text" id="newUsername" required placeholder="VD: canbo1..." class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Mật khẩu (*)</label>
-                            <input type="password" id="newPassword" value="123456" required class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Họ và tên (*)</label>
-                            <input type="text" id="newFullName" required placeholder="VD: Nguyễn Văn A..." class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Chức vụ (*)</label>
-                            <select id="newTitle" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-                                <option value="">-- Chọn Chức vụ --</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Thuộc Ban (*)</label>
-                            <select id="newDepartment" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-                                <option value="">-- Chọn Ban / Đơn vị --</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Vai trò (*)</label>
-                            <select id="newRoleSelect" onchange="onRoleSelectChange(this.value)" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white font-semibold">
-                                <option value="staff" selected>Đăng ký lịch (Trưởng / Phó Ban)</option>
-                                <option value="approver">Duyệt lịch (Bí thư / Phó Bí thư)</option>
-                                <option value="admin">Quản trị viên (Toàn quyền)</option>
-                            </select>
-                        </div>
-                        <div class="flex items-center gap-2 pt-1 bg-slate-50 p-2 rounded-lg border border-slate-200">
-                            <input type="checkbox" id="newCanApprove" class="w-4 h-4 text-emerald-600 rounded">
-                            <label for="newCanApprove" class="text-xs font-bold text-slate-700 cursor-pointer">Cấp quyền duyệt lịch tuần</label>
-                        </div>
-                        <button type="submit" class="w-full py-2.5 bg-[#00529C] hover:bg-blue-700 text-white font-bold rounded-lg text-sm shadow">
-                            Tạo tài khoản cán bộ
-                        </button>
-                    </form>
-                </div>
-
-                <div class="lg:col-span-2 bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <h3 class="text-sm sm:text-base font-bold text-slate-800">Danh sách Cán bộ</h3>
-                            <p class="text-xs text-slate-500">Chỉnh sửa hoặc reset mật khẩu về 123456.</p>
-                        </div>
-                        <button onclick="loadUsersList()" class="text-xs px-2.5 py-1.5 border rounded hover:bg-slate-50">
-                            <i class="fa-solid fa-rotate"></i>
-                        </button>
-                    </div>
-
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm border-collapse min-w-[550px]">
-                            <thead>
-                                <tr class="bg-slate-50 text-slate-600 text-xs font-bold uppercase border-b">
-                                    <th class="p-2.5">Họ tên & Chức vụ</th>
-                                    <th class="p-2.5">Ban / Bộ phận</th>
-                                    <th class="p-2.5">Tài khoản</th>
-                                    <th class="p-2.5 text-center">Vai trò</th>
-                                    <th class="p-2.5 text-center">Quyền duyệt</th>
-                                    <th class="p-2.5 text-right">Quản lý</th>
-                                </tr>
-                            </thead>
-                            <tbody id="userTableBody" class="divide-y divide-slate-200 text-xs sm:text-sm">
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SUBPANEL 2: LOCATIONS -->
-            <div id="adminPanelLocs" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-                <div class="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200 h-fit">
-                    <h3 class="text-sm sm:text-base font-bold text-slate-800 mb-3">Thêm Phòng họp</h3>
-                    <form onsubmit="handleCreateLocation(event)" class="space-y-3">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Tên Phòng họp (*)</label>
-                            <input type="text" id="newLocName" required placeholder="VD: Phòng họp số 3..." class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                        </div>
-                        <button type="submit" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-sm shadow">
-                            Thêm Địa điểm
-                        </button>
-                    </form>
-                </div>
-                <div class="lg:col-span-2 bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200">
-                    <h3 class="text-sm sm:text-base font-bold text-slate-800 mb-2">Danh sách Phòng họp</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm border-collapse">
-                            <thead>
-                                <tr class="bg-slate-50 text-slate-600 text-xs font-bold uppercase border-b">
-                                    <th class="p-2 w-12">STT</th>
-                                    <th class="p-2">Tên Địa điểm</th>
-                                    <th class="p-2 text-right w-20">Xóa</th>
-                                </tr>
-                            </thead>
-                            <tbody id="locTableBody" class="divide-y divide-slate-200"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SUBPANEL 3: ATTENDEE GROUPS -->
-            <div id="adminPanelGroups" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-                <div class="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200 h-fit">
-                    <h3 class="text-sm sm:text-base font-bold text-slate-800 mb-3">Tạo Nhóm Triệu Tập Mới</h3>
-                    <form onsubmit="handleCreateGroup(event)" class="space-y-3">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Tên Nhóm (*)</label>
-                            <input type="text" id="newGroupName" required placeholder="VD: Ban Thường vụ Đoàn..." class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-amber-500 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Chọn Cán bộ:</label>
-                            <div id="groupMembersCheckboxes" class="max-h-44 overflow-y-auto p-2 border rounded-lg bg-slate-50 space-y-1 text-xs"></div>
-                        </div>
-                        <button type="submit" class="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-sm shadow">
-                            Lưu Nhóm Mới
-                        </button>
-                    </form>
-                </div>
-                <div class="lg:col-span-2 bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200">
-                    <h3 class="text-sm sm:text-base font-bold text-slate-800 mb-2">Danh sách Nhóm</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm border-collapse min-w-[450px]">
-                            <thead>
-                                <tr class="bg-slate-50 text-slate-600 text-xs font-bold uppercase border-b">
-                                    <th class="p-2 w-12">STT</th>
-                                    <th class="p-2">Tên Nhóm</th>
-                                    <th class="p-2">Thành viên</th>
-                                    <th class="p-2 text-right w-24">Thao tác</th>
-                                </tr>
-                            </thead>
-                            <tbody id="groupTableBody" class="divide-y divide-slate-200"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SUBPANEL 4: DEPARTMENTS -->
-            <div id="adminPanelDepts" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-                <div class="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200 h-fit">
-                    <h3 class="text-sm sm:text-base font-bold text-slate-800 mb-3">Thêm Ban / Đơn vị</h3>
-                    <form onsubmit="handleCreateDepartment(event)" class="space-y-3">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Tên Ban (*)</label>
-                            <input type="text" id="newDeptName" required placeholder="VD: Ban Phong trào..." class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
-                        </div>
-                        <button type="submit" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-sm shadow">Thêm Ban</button>
-                    </form>
-                </div>
-                <div class="lg:col-span-2 bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm border-collapse">
-                            <thead>
-                                <tr class="bg-slate-50 text-slate-600 text-xs font-bold uppercase border-b">
-                                    <th class="p-2 w-12">STT</th>
-                                    <th class="p-2">Tên Ban</th>
-                                    <th class="p-2 text-right w-20">Xóa</th>
-                                </tr>
-                            </thead>
-                            <tbody id="deptTableBody" class="divide-y divide-slate-200"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SUBPANEL 5: TITLES -->
-            <div id="adminPanelTitles" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-                <div class="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200 h-fit">
-                    <h3 class="text-sm sm:text-base font-bold text-slate-800 mb-3">Thêm Chức vụ</h3>
-                    <form onsubmit="handleCreateTitle(event)" class="space-y-3">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Tên Chức vụ (*)</label>
-                            <input type="text" id="newTitleName" required placeholder="VD: Bí thư Chi đoàn..." class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                        </div>
-                        <button type="submit" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-sm shadow">Thêm Chức vụ</button>
-                    </form>
-                </div>
-                <div class="lg:col-span-2 bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm border-collapse">
-                            <thead>
-                                <tr class="bg-slate-50 text-slate-600 text-xs font-bold uppercase border-b">
-                                    <th class="p-2 w-12">STT</th>
-                                    <th class="p-2">Tên Chức vụ</th>
-                                    <th class="p-2 text-right w-20">Xóa</th>
-                                </tr>
-                            </thead>
-                            <tbody id="titleTableBody" class="divide-y divide-slate-200"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- MODAL 1: LOGIN -->
-    <div id="loginModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-xs">
-        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-5 sm:p-6 relative">
-            <button onclick="closeLoginModal()" class="absolute top-3.5 right-3.5 text-slate-400 hover:text-slate-600 text-lg p-1">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-            <div class="text-center mb-5">
-                <div class="w-12 h-12 bg-blue-100 text-[#00529C] rounded-full flex items-center justify-center mx-auto mb-2 text-xl font-bold">
-                    <i class="fa-solid fa-lock"></i>
-                </div>
-                <h3 class="text-base sm:text-lg font-bold text-slate-800">Đăng Nhập Cán Bộ Đoàn</h3>
-                <p class="text-xs text-slate-500">Đoàn Trường Cao đẳng Tiền Giang</p>
-            </div>
-
-            <form onsubmit="handleManualLogin(event)" class="space-y-3.5">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tài khoản</label>
-                    <input type="text" id="loginUsername" required placeholder="Tên đăng nhập..." class="w-full px-3 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mật khẩu</label>
-                    <input type="password" id="loginPassword" required placeholder="Mật khẩu..." class="w-full px-3 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                </div>
-                <div id="loginError" class="hidden text-xs text-red-600 bg-red-50 p-2.5 rounded border border-red-200"></div>
-                <button type="submit" class="w-full py-2.5 bg-[#00529C] hover:bg-blue-700 text-white font-bold rounded-lg text-sm shadow">
-                    Đăng nhập hệ thống
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL 2: CHANGE PASSWORD -->
-    <div id="changePasswordModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-xs">
-        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-5 sm:p-6 relative">
-            <button onclick="closeChangePasswordModal()" class="absolute top-3.5 right-3.5 text-slate-400 hover:text-slate-600 text-lg p-1">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-            <div class="text-center mb-4">
-                <div class="w-10 h-10 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-2 text-base">
-                    <i class="fa-solid fa-key"></i>
-                </div>
-                <h3 class="text-base font-bold text-slate-800">Đổi Mật Khẩu Cá Nhân</h3>
-            </div>
-
-            <form onsubmit="handleChangePasswordSubmit(event)" class="space-y-3">
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Mật khẩu hiện tại</label>
-                    <input type="password" id="pwdCurrent" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Mật khẩu mới</label>
-                    <input type="password" id="pwdNew" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Xác nhận mật khẩu mới</label>
-                    <input type="password" id="pwdConfirm" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                </div>
-                <div id="pwdAlert" class="hidden text-xs p-2 rounded border"></div>
-                <button type="submit" class="w-full py-2.5 bg-[#00529C] hover:bg-blue-700 text-white font-bold rounded-lg text-sm shadow">
-                    Lưu mật khẩu mới
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL 3: EDIT GROUP -->
-    <div id="editGroupModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-xs">
-        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-5 relative">
-            <button onclick="closeEditGroupModal()" class="absolute top-3.5 right-3.5 text-slate-400 hover:text-slate-600 text-lg p-1">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-            <div class="mb-3 pb-2 border-b">
-                <h3 class="text-base font-bold text-slate-800">Thêm Thành Viên Vào Nhóm</h3>
-            </div>
-
-            <form onsubmit="handleEditGroupSubmit(event)" class="space-y-3">
-                <input type="hidden" id="editGroupId">
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Tên Nhóm (*)</label>
-                    <input type="text" id="editGroupName" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-amber-500 outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Danh sách Cán bộ:</label>
-                    <div id="editGroupMembersContainer" class="max-h-52 overflow-y-auto p-2 border rounded-lg bg-slate-50 space-y-1 text-xs">
-                    </div>
-                </div>
-                <div class="flex justify-end gap-2 pt-2 border-t">
-                    <button type="button" onclick="closeEditGroupModal()" class="px-3 py-1.5 border rounded text-xs">Hủy</button>
-                    <button type="submit" class="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded text-xs shadow">Lưu cập nhật</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL 4: EDIT USER -->
-    <div id="editUserModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-xs">
-        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-5 relative">
-            <button onclick="closeEditUserModal()" class="absolute top-3.5 right-3.5 text-slate-400 hover:text-slate-600 text-lg p-1">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-            <div class="mb-3 pb-2 border-b">
-                <h3 class="text-base font-bold text-slate-800">Chỉnh Sửa Hồ Sơ Cán Bộ</h3>
-            </div>
-
-            <form onsubmit="handleEditUserSubmit(event)" class="space-y-3">
-                <input type="hidden" id="editUserId">
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Tài khoản</label>
-                    <input type="text" id="editUsername" readonly class="w-full px-3 py-2 bg-slate-100 border rounded-lg text-sm text-slate-600 cursor-not-allowed">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Họ và tên (*)</label>
-                    <input type="text" id="editFullName" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Chức vụ (*)</label>
-                    <select id="editTitle" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Ban / Đơn vị (*)</label>
-                    <select id="editDepartment" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Vai trò (*)</label>
-                    <select id="editRole" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white font-semibold">
-                        <option value="staff">Đăng ký lịch (Trưởng / Phó Ban)</option>
-                        <option value="approver">Duyệt lịch (Bí thư / Phó Bí thư)</option>
-                        <option value="admin">Quản trị viên (Admin)</option>
-                    </select>
-                </div>
-                <div class="flex items-center gap-2 pt-1 bg-slate-50 p-2 rounded-lg border">
-                    <input type="checkbox" id="editCanApprove" class="w-4 h-4 text-emerald-600 rounded">
-                    <label for="editCanApprove" class="text-xs font-bold text-slate-700 cursor-pointer">Cấp quyền duyệt lịch tuần</label>
-                </div>
-                <div class="flex justify-end gap-2 pt-2 border-t">
-                    <button type="button" onclick="closeEditUserModal()" class="px-3 py-1.5 border rounded text-xs">Hủy</button>
-                    <button type="submit" class="px-4 py-1.5 bg-[#00529C] text-white font-bold rounded text-xs shadow">Lưu cập nhật</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL 5: REJECT SCHEDULE -->
-    <div id="rejectModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-xs">
-        <div class="bg-white w-full max-w-sm rounded-2xl shadow-xl p-5 relative">
-            <h3 class="text-base font-bold text-slate-800 mb-1">Yêu Cầu Chỉnh Sửa Lịch</h3>
-            <p class="text-xs text-slate-500 mb-3">Ghi rõ lý do để Ban đăng ký cập nhật lại.</p>
-            <textarea id="rejectReasonInput" rows="3" placeholder="Nhập lý do phản hồi..." class="w-full border rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-red-400"></textarea>
-            <input type="hidden" id="rejectScheduleId">
-            <div class="flex justify-end gap-2 mt-3">
-                <button onclick="closeRejectModal()" class="px-3 py-1.5 border rounded text-xs">Hủy</button>
-                <button onclick="confirmRejectSchedule()" class="px-3 py-1.5 bg-red-600 text-white font-bold rounded text-xs">Xác nhận gửi</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // State
-        let currentUser = null;
-        let currentWeekOffset = 0;
-        let departmentsList = [];
-        let titlesList = [];
-        let locationsList = [];
-        let groupsList = [];
-        let usersList = [];
-        let userNotifications = [];
-
-        window.onload = async function() {
-            applyUserRole();
-            setInitialDate();
-            await loadDepartments();
-            await loadTitles();
-            await loadLocations();
-            await loadGroups();
-            await loadAllUsers();
-            renderCalendar();
-        };
-
-        // BẬT / TẮT MENU DI ĐỘNG (MOBILE DRAWER)
-        function toggleMobileMenu() {
-            const drawer = document.getElementById('mobileMenuDrawer');
-            const overlay = document.getElementById('mobileMenuOverlay');
-            if (drawer.classList.contains('translate-x-full')) {
-                drawer.classList.remove('translate-x-full');
-                overlay.classList.remove('hidden');
-                document.body.style.overflow = 'hidden';
-            } else {
-                drawer.classList.add('translate-x-full');
-                overlay.classList.add('hidden');
-                document.body.style.overflow = '';
-            }
-        }
-
-        function setInitialDate() {
-            const today = new Date();
-            const yyyy = today.getFullYear();
-            const mm = String(today.getMonth() + 1).padStart(2, '0');
-            const dd = String(today.getDate()).padStart(2, '0');
-            const dateInput = document.getElementById('regDate');
-            if (dateInput) {
-                dateInput.value = `${yyyy}-${mm}-${dd}`;
-                dateInput.min = `${yyyy}-${mm}-${dd}`;
-            }
-        }
-
-        async function loadDepartments() {
-            try {
-                const res = await fetch('/api/departments');
-                departmentsList = await res.json();
-                populateDeptSelects();
-                renderDeptTable();
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        async function loadTitles() {
-            try {
-                const res = await fetch('/api/titles');
-                titlesList = await res.json();
-                populateTitleSelects();
-                renderTitleTable();
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        async function loadLocations() {
-            try {
-                const res = await fetch('/api/locations');
-                locationsList = await res.json();
-                populateLocationSelects();
-                renderLocationTable();
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        async function loadGroups() {
-            try {
-                const res = await fetch('/api/groups');
-                groupsList = await res.json();
-                renderAttendeesTreeView();
-                renderGroupTable();
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        async function loadAllUsers() {
-            try {
-                const res = await fetch('/api/users');
-                usersList = await res.json();
-                populateLeaderUsersSelect();
-                renderAttendeesTreeView();
-                populateGroupMemberCheckboxes();
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        function populateLocationSelects() {
-            const regLoc = document.getElementById('regLocation');
-            const cur = regLoc.value;
-            regLoc.innerHTML = '';
-            locationsList.forEach(l => {
-                const opt = document.createElement('option');
-                opt.value = l.name;
-                opt.textContent = l.name;
-                regLoc.appendChild(opt);
-            });
-            if (cur) regLoc.value = cur;
-        }
-
-        function populateDeptSelects() {
-            const filter = document.getElementById('filterDepartment');
-            const curFilterVal = filter.value;
-            filter.innerHTML = '<option value="all">Tất cả các ban / đơn vị</option>';
-            departmentsList.forEach(d => {
-                const opt = document.createElement('option');
-                opt.value = d.name;
-                opt.textContent = d.name;
-                filter.appendChild(opt);
-            });
-            if (curFilterVal) filter.value = curFilterVal;
-
-            const userDeptSel = document.getElementById('newDepartment');
-            userDeptSel.innerHTML = '<option value="">-- Chọn Ban / Đơn vị --</option>';
-            departmentsList.forEach(d => {
-                const opt = document.createElement('option');
-                opt.value = d.name;
-                opt.textContent = d.name;
-                userDeptSel.appendChild(opt);
-            });
-
-            const editDeptSel = document.getElementById('editDepartment');
-            if (editDeptSel) {
-                editDeptSel.innerHTML = '';
-                departmentsList.forEach(d => {
-                    const opt = document.createElement('option');
-                    opt.value = d.name;
-                    opt.textContent = d.name;
-                    editDeptSel.appendChild(opt);
+const express = require('express');
+const path = require('path');
+
+const app = express();
+const PORT = process.env.PORT || 10000;
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
+
+// ================= KẾT NỐI DATABASE (TURSO HOẶC SQLITE CỤC BỘ) =================
+const isCloud = !!(process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN);
+
+let db;
+if (isCloud) {
+    console.log("--> ĐANG KẾT NỐI DATABASE ĐÁM MÂY (TURSO CLOUD - LƯU TRỮ VĨNH VIỄN)...");
+    const { createClient } = require('@libsql/client');
+    
+    const client = createClient({
+        url: process.env.TURSO_DATABASE_URL.trim(),
+        authToken: process.env.TURSO_AUTH_TOKEN.trim()
+    });
+
+    db = {
+        all: (sql, params, cb) => {
+            if (typeof params === 'function') { cb = params; params = []; }
+            client.execute({ sql, args: params || [] })
+                .then(res => { if (typeof cb === 'function') cb(null, res.rows); })
+                .catch(err => {
+                    console.error("Lỗi db.all:", err.message);
+                    if (typeof cb === 'function') cb(err);
                 });
-            }
-
-            if (currentUser && currentUser.department) {
-                document.getElementById('regDepartment').value = currentUser.department;
-            }
-        }
-
-        function populateTitleSelects() {
-            const titleSel = document.getElementById('newTitle');
-            titleSel.innerHTML = '<option value="">-- Chọn Chức vụ --</option>';
-            titlesList.forEach(t => {
-                const opt = document.createElement('option');
-                opt.value = t.name;
-                opt.textContent = t.name;
-                titleSel.appendChild(opt);
-            });
-
-            const editTitleSel = document.getElementById('editTitle');
-            if (editTitleSel) {
-                editTitleSel.innerHTML = '';
-                titlesList.forEach(t => {
-                    const opt = document.createElement('option');
-                    opt.value = t.name;
-                    opt.textContent = t.name;
-                    editTitleSel.appendChild(opt);
+        },
+        get: (sql, params, cb) => {
+            if (typeof params === 'function') { cb = params; params = []; }
+            client.execute({ sql, args: params || [] })
+                .then(res => { if (typeof cb === 'function') cb(null, res.rows[0] || null); })
+                .catch(err => {
+                    console.error("Lỗi db.get:", err.message);
+                    if (typeof cb === 'function') cb(err);
                 });
-            }
-
-            const leaderTitleSel = document.getElementById('selectLeaderTitle');
-            leaderTitleSel.innerHTML = '<option value="">-- Giữ chức vụ theo hồ sơ --</option>';
-            titlesList.forEach(t => {
-                const opt = document.createElement('option');
-                opt.value = t.name;
-                opt.textContent = t.name;
-                leaderTitleSel.appendChild(opt);
-            });
-        }
-
-        function populateLeaderUsersSelect() {
-            const selectEl = document.getElementById('selectLeaderUser');
-            selectEl.innerHTML = '<option value="">-- Bấm để chọn người chủ trì --</option>';
-
-            usersList.forEach(u => {
-                if (u.username === 'admin') return;
-                const opt = document.createElement('option');
-                opt.value = JSON.stringify({ name: u.full_name, title: u.title || 'Cán bộ', dept: u.department });
-                opt.textContent = `Đ/c ${u.full_name} (${u.title || 'Cán bộ'} - ${u.department})`;
-                selectEl.appendChild(opt);
-            });
-        }
-
-        function onSelectLeaderChange() {
-            const selVal = document.getElementById('selectLeaderUser').value;
-            if (!selVal) {
-                document.getElementById('previewChairperson').innerText = 'Chưa chọn';
-                return;
-            }
-            const userObj = JSON.parse(selVal);
-            const leaderTitleSel = document.getElementById('selectLeaderTitle');
-            if (userObj.title) {
-                leaderTitleSel.value = userObj.title;
-            }
-            updateGeneratedChairperson();
-        }
-
-        function updateGeneratedChairperson() {
-            const selVal = document.getElementById('selectLeaderUser').value;
-            if (!selVal) {
-                document.getElementById('previewChairperson').innerText = 'Chưa chọn';
-                return;
-            }
-            const userObj = JSON.parse(selVal);
-            const overrideTitle = document.getElementById('selectLeaderTitle').value;
-            const finalTitle = overrideTitle || userObj.title || 'Cán bộ Đoàn';
-            
-            const formatted = `Đ/c ${userObj.name} - ${finalTitle}`;
-            document.getElementById('previewChairperson').innerText = formatted;
-        }
-
-        function toggleCustomChairperson(isCustom) {
-            const selectMode = document.getElementById('selectChairpersonMode');
-            const customMode = document.getElementById('customChairpersonMode');
-
-            if (isCustom) {
-                selectMode.classList.add('hidden');
-                customMode.classList.remove('hidden');
-                document.getElementById('customChairpersonInput').focus();
-            } else {
-                selectMode.classList.remove('hidden');
-                customMode.classList.add('hidden');
-            }
-        }
-
-        function getFinalChairpersonValue() {
-            const isCustom = document.getElementById('chkCustomChairperson').checked;
-            if (isCustom) {
-                return document.getElementById('customChairpersonInput').value.trim();
-            }
-            const selVal = document.getElementById('selectLeaderUser').value;
-            if (!selVal) return '';
-            const userObj = JSON.parse(selVal);
-            const overrideTitle = document.getElementById('selectLeaderTitle').value;
-            const finalTitle = overrideTitle || userObj.title || 'Cán bộ Đoàn';
-            return `Đ/c ${userObj.name} - ${finalTitle}`;
-        }
-
-        function getRawLeaderName() {
-            const isCustom = document.getElementById('chkCustomChairperson').checked;
-            if (isCustom) {
-                let txt = document.getElementById('customChairpersonInput').value.trim();
-                txt = txt.replace(/^Đ\/c\s+/i, '');
-                return txt.split('-')[0].trim();
-            }
-            const selVal = document.getElementById('selectLeaderUser').value;
-            if (!selVal) return '';
-            const userObj = JSON.parse(selVal);
-            return userObj.name;
-        }
-
-        // ================= CÂY THƯ MỤC THÀNH PHẦN THAM DỰ =================
-        let expandedGroups = {};
-
-        function renderAttendeesTreeView() {
-            const container = document.getElementById('attendeesTreeContainer');
-            if (!container) return;
-            container.innerHTML = '';
-
-            if (!usersList || usersList.length === 0) {
-                container.innerHTML = '<div class="text-slate-400 italic py-2 text-center text-xs">Chưa có dữ liệu cán bộ.</div>';
-                return;
-            }
-
-            const activeUsers = usersList.filter(u => u.username !== 'admin');
-            const isRootExpanded = expandedGroups['root'] !== false;
-
-            const rootFolderDiv = document.createElement('div');
-            rootFolderDiv.className = 'border border-[#00529C]/30 rounded-lg overflow-hidden bg-white shadow-xs';
-
-            const rootHeader = document.createElement('div');
-            rootHeader.className = 'flex items-center justify-between p-2 bg-blue-50/90 hover:bg-blue-100/80 cursor-pointer select-none border-b border-blue-200';
-            rootHeader.innerHTML = `
-                <div class="flex items-center gap-1.5 flex-1">
-                    <button type="button" onclick="toggleTreeFolder('root', event)" class="w-4 h-4 flex items-center justify-center text-[#00529C]">
-                        <i id="folderIcon-root" class="fa-solid ${isRootExpanded ? 'fa-chevron-down' : 'fa-chevron-right'} text-[10px]"></i>
-                    </button>
-                    <i class="fa-solid fa-folder-open text-[#00529C] text-sm"></i>
-                    <label class="flex items-center gap-1.5 cursor-pointer font-bold text-blue-950 text-xs" onclick="event.stopPropagation()">
-                        <input type="checkbox" onchange="toggleRootStaffCheckbox(this.checked)" id="grpChk-root" class="rounded text-[#00529C] w-3.5 h-3.5">
-                        <span>CÁN BỘ ĐOÀN</span>
-                    </label>
-                    <span class="text-[10px] text-blue-800 bg-blue-200/80 px-1.5 py-0.2 rounded font-bold">(${activeUsers.length})</span>
-                </div>
-            `;
-            rootHeader.onclick = (e) => toggleTreeFolder('root', e);
-
-            const rootChildrenDiv = document.createElement('div');
-            rootChildrenDiv.id = 'treeChildren-root';
-            rootChildrenDiv.className = `${isRootExpanded ? '' : 'hidden'} p-2 space-y-2 bg-slate-50/60`;
-
-            if (groupsList && groupsList.length > 0) {
-                groupsList.forEach(grp => {
-                    const grpMemberIds = (grp.member_ids || '').split(',').map(s => s.trim()).filter(Boolean);
-                    const grpUsers = usersList.filter(u => grpMemberIds.includes(String(u.id)) && u.username !== 'admin');
-                    const isGrpExpanded = expandedGroups[grp.id] !== false;
-
-                    const grpDiv = document.createElement('div');
-                    grpDiv.className = 'border border-amber-300 rounded-lg overflow-hidden bg-white shadow-xs ml-2 sm:ml-3';
-
-                    const grpHeader = document.createElement('div');
-                    grpHeader.className = 'flex items-center justify-between p-1.5 bg-amber-50 hover:bg-amber-100/70 cursor-pointer select-none';
-                    grpHeader.innerHTML = `
-                        <div class="flex items-center gap-1.5 flex-1">
-                            <button type="button" onclick="toggleTreeFolder(${grp.id}, event)" class="w-3.5 h-3.5 flex items-center justify-center text-amber-700">
-                                <i id="folderIcon-${grp.id}" class="fa-solid ${isGrpExpanded ? 'fa-chevron-down' : 'fa-chevron-right'} text-[9px]"></i>
-                            </button>
-                            <i class="fa-solid fa-folder text-amber-500 text-xs"></i>
-                            <label class="flex items-center gap-1.5 cursor-pointer font-bold text-slate-800 text-xs" onclick="event.stopPropagation()">
-                                <input type="checkbox" onchange="toggleGroupCheckbox(${grp.id}, this.checked)" id="grpChk-${grp.id}" class="chk-tree-parent rounded text-amber-600 w-3 h-3">
-                                <span>${grp.name}</span>
-                            </label>
-                            <span class="text-[10px] text-amber-900 bg-amber-200/70 px-1 py-0.2 rounded font-semibold">(${grpUsers.length})</span>
-                        </div>
-                    `;
-                    grpHeader.onclick = (e) => toggleTreeFolder(grp.id, e);
-
-                    const grpChildrenDiv = document.createElement('div');
-                    grpChildrenDiv.id = `treeChildren-${grp.id}`;
-                    grpChildrenDiv.className = `${isGrpExpanded ? '' : 'hidden'} pl-6 pr-2 py-1 space-y-1 bg-white border-t border-amber-100`;
-
-                    if (grpUsers.length === 0) {
-                        grpChildrenDiv.innerHTML = '<div class="text-[10px] text-slate-400 italic py-0.5">Nhóm chưa có cán bộ</div>';
-                    } else {
-                        grpUsers.forEach(u => {
-                            const item = document.createElement('label');
-                            item.className = 'flex items-center gap-1.5 py-0.5 px-1 hover:bg-slate-100 rounded cursor-pointer transition text-xs';
-                            item.innerHTML = `
-                                <input type="checkbox" data-user-id="${u.id}" data-user-name="${u.full_name}" data-user-title="${u.title || 'Cán bộ'}"
-                                       value="Đ/c ${u.full_name} (${u.title || 'Cán bộ'})" onchange="onChildCheckboxChange(${grp.id})"
-                                       class="chk-tree-child chk-child-grp-${grp.id} rounded text-blue-600 w-3 h-3">
-                                <span class="truncate"><b>${u.full_name}</b> <span class="text-slate-400 text-[11px]">(${u.title || 'Cán bộ'})</span></span>
-                            `;
-                            grpChildrenDiv.appendChild(item);
-                        });
+        },
+        run: function(sql, params, cb) {
+            if (typeof params === 'function') { cb = params; params = []; }
+            client.execute({ sql, args: params || [] })
+                .then(res => {
+                    if (typeof cb === 'function') {
+                        cb.call({ lastID: Number(res.lastInsertRowid || 0), changes: res.rowsAffected }, null);
                     }
-
-                    grpDiv.appendChild(grpHeader);
-                    grpDiv.appendChild(grpChildrenDiv);
-                    rootChildrenDiv.appendChild(grpDiv);
+                })
+                .catch(err => {
+                    console.error("Lỗi db.run:", err.message);
+                    if (typeof cb === 'function') cb(err);
                 });
-            }
-
-            const otherStaffDiv = document.createElement('div');
-            otherStaffDiv.className = 'border border-slate-300 rounded-lg overflow-hidden bg-white shadow-xs ml-2 sm:ml-3';
-            const isOtherExpanded = expandedGroups['other'] !== false;
-
-            const otherHeader = document.createElement('div');
-            otherHeader.className = 'flex items-center justify-between p-1.5 bg-slate-100 hover:bg-slate-200/70 cursor-pointer select-none';
-            otherHeader.innerHTML = `
-                <div class="flex items-center gap-1.5 flex-1">
-                    <button type="button" onclick="toggleTreeFolder('other', event)" class="w-3.5 h-3.5 flex items-center justify-center text-slate-600">
-                        <i id="folderIcon-other" class="fa-solid ${isOtherExpanded ? 'fa-chevron-down' : 'fa-chevron-right'} text-[9px]"></i>
-                    </button>
-                    <i class="fa-solid fa-users text-slate-600 text-xs"></i>
-                    <label class="flex items-center gap-1.5 cursor-pointer font-bold text-slate-800 text-xs" onclick="event.stopPropagation()">
-                        <input type="checkbox" onchange="toggleOtherStaffCheckbox(this.checked)" id="grpChk-other" class="rounded text-blue-600 w-3 h-3">
-                        <span>Cán bộ khác / Cá nhân</span>
-                    </label>
-                </div>
-            `;
-            otherHeader.onclick = (e) => toggleTreeFolder('other', e);
-
-            const otherChildrenDiv = document.createElement('div');
-            otherChildrenDiv.id = 'treeChildren-other';
-            otherChildrenDiv.className = `${isOtherExpanded ? '' : 'hidden'} pl-6 pr-2 py-1 grid grid-cols-1 sm:grid-cols-2 gap-1 bg-white border-t border-slate-200`;
-
-            activeUsers.forEach(u => {
-                const item = document.createElement('label');
-                item.className = 'flex items-center gap-1.5 py-0.5 px-1 hover:bg-slate-100 rounded cursor-pointer transition text-xs';
-                item.innerHTML = `
-                    <input type="checkbox" data-user-id="${u.id}" data-user-name="${u.full_name}" data-user-title="${u.title || 'Cán bộ'}"
-                           value="Đ/c ${u.full_name} (${u.title || 'Cán bộ'})" onchange="onGlobalStaffCheckboxChange(${u.id}, this.checked)"
-                           class="chk-tree-global chk-global-user-${u.id} rounded text-blue-600 w-3 h-3">
-                    <span class="truncate"><b>${u.full_name}</b> <span class="text-slate-400 text-[11px]">(${u.title || 'Cán bộ'})</span></span>
-                `;
-                otherChildrenDiv.appendChild(item);
-            });
-
-            otherStaffDiv.appendChild(otherHeader);
-            otherStaffDiv.appendChild(otherChildrenDiv);
-            rootChildrenDiv.appendChild(otherStaffDiv);
-
-            rootFolderDiv.appendChild(rootHeader);
-            rootFolderDiv.appendChild(rootChildrenDiv);
-            container.appendChild(rootFolderDiv);
-
-            renderAttendeesPreview();
-        }
-
-        function toggleTreeFolder(folderKey, e) {
-            if (e) e.stopPropagation();
-            const childDiv = document.getElementById(`treeChildren-${folderKey}`);
-            const icon = document.getElementById(`folderIcon-${folderKey}`);
-            if (!childDiv || !icon) return;
-
-            const isCurrentlyHidden = childDiv.classList.contains('hidden');
-            if (isCurrentlyHidden) {
-                childDiv.classList.remove('hidden');
-                icon.className = 'fa-solid fa-chevron-down text-[10px]';
-                expandedGroups[folderKey] = true;
-            } else {
-                childDiv.classList.add('hidden');
-                icon.className = 'fa-solid fa-chevron-right text-[10px]';
-                expandedGroups[folderKey] = false;
-            }
-        }
-
-        function expandCollapseAllTrees(expand) {
-            if (groupsList) {
-                groupsList.forEach(g => {
-                    expandedGroups[g.id] = expand;
+        },
+        prepare: (sql) => ({
+            run: (...args) => {
+                const cb = typeof args[args.length - 1] === 'function' ? args.pop() : null;
+                client.execute({ sql, args }).then(() => {
+                    if (typeof cb === 'function') cb(null);
+                }).catch(e => {
+                    console.error("Lỗi prepare.run:", e.message);
+                    if (typeof cb === 'function') cb(e);
                 });
-            }
-            expandedGroups['root'] = expand; expandedGroups['other'] = expand;
-            renderAttendeesTreeView();
+            },
+            finalize: () => {}
+        }),
+        serialize: (fn) => { if (typeof fn === 'function') fn(); }
+    };
+} else {
+    console.log("--> ĐANG CHẠY CƠ SỞ DỮ LIỆU CỤC BỘ TRÊN MÁY TÍNH (SQLITE)...");
+    const sqlite3 = require('sqlite3').verbose();
+    const dbFile = path.join(__dirname, 'youth_union.db');
+    db = new sqlite3.Database(dbFile);
+}
+
+// ================= KHỞI TẠO CẤU TRÚC BẢNG =================
+function initDatabase() {
+    db.run(`CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE,
+        password TEXT,
+        full_name TEXT,
+        title TEXT,
+        department TEXT,
+        role TEXT DEFAULT 'staff',
+        can_approve INTEGER DEFAULT 0
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS departments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS titles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS locations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS attendee_groups (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE,
+        member_ids TEXT
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS schedules (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT,
+        date TEXT,
+        start_time TEXT,
+        end_time TEXT,
+        location TEXT,
+        department TEXT,
+        chairperson TEXT,
+        chairperson_name TEXT,
+        attendees TEXT,
+        note TEXT,
+        status TEXT DEFAULT 'pending',
+        created_by_name TEXT,
+        approved_by_name TEXT,
+        reject_reason TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS notifications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        user_name TEXT,
+        schedule_id INTEGER,
+        message TEXT,
+        meeting_date TEXT,
+        meeting_time TEXT,
+        meeting_location TEXT,
+        role_in_meeting TEXT,
+        is_read INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+
+    // Tạo tài khoản admin mặc định nếu chưa tồn tại
+    db.get('SELECT COUNT(*) as count FROM users WHERE username = "admin"', (err, row) => {
+        if (!err && (!row || row.count === 0)) {
+            db.run(`INSERT INTO users (username, password, full_name, title, department, role, can_approve)
+                    VALUES ('admin', '123456', 'Quản trị viên Hệ thống', 'Quản trị viên', 'Văn phòng Đoàn trường', 'admin', 1)`);
+            console.log("--> Đã tạo tài khoản quản trị mặc định: admin / 123456");
         }
+    });
 
-        function toggleGroupCheckbox(grpId, isChecked) {
-            document.querySelectorAll(`.chk-child-grp-${grpId}`).forEach(chk => {
-                chk.checked = isChecked;
-                const uid = chk.getAttribute('data-user-id');
-                syncGlobalStaffCheckbox(uid, isChecked);
-            });
-            syncAllGroupHeaders();
-            renderAttendeesPreview();
+    // Thêm các ban chuyên môn mẫu nếu trống
+    db.get('SELECT COUNT(*) as count FROM departments', (err, row) => {
+        if (!err && (!row || row.count === 0)) {
+            const depts = ['Thường trực Đoàn trường', 'Văn phòng Đoàn trường', 'Ban Tuyên giáo', 'Ban Phong trào', 'Ban Tổ chức - Kiểm tra'];
+            depts.forEach(d => db.run('INSERT OR IGNORE INTO departments (name) VALUES (?)', [d]));
         }
+    });
 
-        function onChildCheckboxChange(grpId) {
-            const childBoxes = Array.from(document.querySelectorAll(`.chk-child-grp-${grpId}`));
-            const allChecked = childBoxes.length > 0 && childBoxes.every(c => c.checked);
-            const parentChk = document.getElementById(`grpChk-${grpId}`);
-            if (parentChk) parentChk.checked = allChecked;
-
-            childBoxes.forEach(chk => {
-                const uid = chk.getAttribute('data-user-id');
-                syncGlobalStaffCheckbox(uid, chk.checked);
-            });
-
-            renderAttendeesPreview();
+    // Thêm chức vụ mẫu nếu trống
+    db.get('SELECT COUNT(*) as count FROM titles', (err, row) => {
+        if (!err && (!row || row.count === 0)) {
+            const titles = ['Bí thư Đoàn', 'Phó Bí thư Đoàn', 'Ủy viên Ban Thường vụ', 'Ủy viên Ban Chấp hành', 'Trưởng ban', 'Phó ban', 'Cán bộ'];
+            titles.forEach(t => db.run('INSERT OR IGNORE INTO titles (name) VALUES (?)', [t]));
         }
+    });
 
-        function onGlobalStaffCheckboxChange(userId, isChecked) {
-            document.querySelectorAll(`.chk-tree-child[data-user-id="${userId}"]`).forEach(c => {
-                c.checked = isChecked;
-            });
-            syncAllGroupHeaders();
-            renderAttendeesPreview();
+    // Thêm phòng họp mẫu nếu trống
+    db.get('SELECT COUNT(*) as count FROM locations', (err, row) => {
+        if (!err && (!row || row.count === 0)) {
+            const locs = ['Văn phòng Đoàn trường', 'Hội trường Lớn', 'Phòng họp số 1', 'Phòng họp số 2', 'Sân đa năng'];
+            locs.forEach(l => db.run('INSERT OR IGNORE INTO locations (name) VALUES (?)', [l]));
         }
+    });
+}
 
-        function syncGlobalStaffCheckbox(userId, isChecked) {
-            const gChk = document.querySelector(`.chk-global-user-${userId}`);
-            if (gChk) gChk.checked = isChecked;
+initDatabase();
+
+// ================= API XÁC THỰC & ĐĂNG NHẬP =================
+app.post('/api/login', (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) return res.status(400).json({ error: 'Vui lòng nhập tài khoản và mật khẩu' });
+
+    db.get('SELECT id, username, full_name, title, department, role, can_approve FROM users WHERE username = ? AND password = ?', [username.trim(), password], (err, user) => {
+        if (err || !user) return res.status(401).json({ error: 'Tên đăng nhập hoặc mật khẩu không chính xác' });
+        res.json({ success: true, user });
+    });
+});
+
+app.post('/api/users/change-password', (req, res) => {
+    const { user_id, current_password, new_password } = req.body;
+    db.get('SELECT id FROM users WHERE id = ? AND password = ?', [user_id, current_password], (err, user) => {
+        if (err || !user) return res.status(400).json({ error: 'Mật khẩu hiện tại không đúng' });
+        db.run('UPDATE users SET password = ? WHERE id = ?', [new_password, user_id], (err2) => {
+            if (err2) return res.status(500).json({ error: 'Không thể cập nhật mật khẩu' });
+            res.json({ success: true });
+        });
+    });
+});
+
+app.post('/api/users/:id/reset-password', (req, res) => {
+    const userId = Number(req.params.id);
+    db.run('UPDATE users SET password = "123456" WHERE id = ?', [userId], (err) => {
+        if (err) return res.status(500).json({ error: 'Lỗi đặt lại mật khẩu' });
+        res.json({ success: true });
+    });
+});
+
+// ================= API QUẢN LÝ CÁN BỘ (USERS) =================
+app.get('/api/users', (req, res) => {
+    db.all('SELECT id, username, full_name, title, department, role, can_approve FROM users ORDER BY id ASC', (err, rows) => {
+        if (err) return res.status(500).json({ error: 'Lỗi nạp danh sách cán bộ' });
+        res.json(rows || []);
+    });
+});
+
+app.post('/api/users', (req, res) => {
+    const { username, password, full_name, title, department, role, can_approve } = req.body;
+    db.run(`INSERT INTO users (username, password, full_name, title, department, role, can_approve)
+            VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [username.trim(), password || '123456', full_name.trim(), title, department, role || 'staff', can_approve ? 1 : 0],
+        function(err) {
+            if (err) return res.status(400).json({ error: 'Tên đăng nhập đã tồn tại trong hệ thống' });
+            res.json({ success: true, id: this ? this.lastID : 0 });
         }
+    );
+});
 
-        function syncAllGroupHeaders() {
-            if (groupsList) {
-                groupsList.forEach(g => {
-                    const childBoxes = Array.from(document.querySelectorAll(`.chk-child-grp-${g.id}`));
-                    const allChecked = childBoxes.length > 0 && childBoxes.every(c => c.checked);
-                    const parentChk = document.getElementById(`grpChk-${g.id}`);
-                    if (parentChk) parentChk.checked = allChecked;
-                });
-            }
-
-            const allGlobalBoxes = Array.from(document.querySelectorAll('.chk-tree-global'));
-            const allChecked = allGlobalBoxes.length > 0 && allGlobalBoxes.every(c => c.checked);
-            const otherHeaderChk = document.getElementById('grpChk-other');
-            if (otherHeaderChk) otherHeaderChk.checked = allChecked;
-
-            const allTreeChildren = Array.from(document.querySelectorAll('.chk-tree-child, .chk-tree-global'));
-            const rootAllChecked = allTreeChildren.length > 0 && allTreeChildren.every(c => c.checked);
-            const rootHeaderChk = document.getElementById('grpChk-root');
-            if (rootHeaderChk) rootHeaderChk.checked = rootAllChecked;
+app.put('/api/users/:id', (req, res) => {
+    const userId = Number(req.params.id);
+    const { full_name, title, department, role, can_approve } = req.body;
+    db.run(`UPDATE users SET full_name = ?, title = ?, department = ?, role = ?, can_approve = ? WHERE id = ?`,
+        [full_name.trim(), title, department, role, can_approve ? 1 : 0, userId],
+        (err) => {
+            if (err) return res.status(500).json({ error: 'Lỗi cập nhật cán bộ' });
+            res.json({ success: true });
         }
+    );
+});
 
-        function toggleAllStaffCheckbox(isChecked) {
-            document.querySelectorAll('.chk-tree-global').forEach(c => c.checked = isChecked);
-            document.querySelectorAll('.chk-tree-child').forEach(c => c.checked = isChecked);
-            document.querySelectorAll('.chk-tree-parent').forEach(c => c.checked = isChecked);
-            renderAttendeesPreview();
+app.patch('/api/users/:id/toggle-approve', (req, res) => {
+    const userId = Number(req.params.id);
+    const { can_approve } = req.body;
+    db.run('UPDATE users SET can_approve = ? WHERE id = ?', [can_approve ? 1 : 0, userId], (err) => {
+        if (err) return res.status(500).json({ error: 'Lỗi phân quyền' });
+        res.json({ success: true });
+    });
+});
+
+// API XÓA TÀI KHOẢN CÁN BỘ (HỖ TRỢ ĐỒNG THỜI SỐ VÀ CHUỖI, CHẶN XÓA ADMIN)
+app.delete('/api/users/:id', (req, res) => {
+    const rawId = req.params.id;
+    const numId = Number(rawId);
+
+    db.run('DELETE FROM users WHERE (id = ? OR id = ?) AND username != "admin"', [rawId, numId], function(err) {
+        if (err) {
+            console.error("Lỗi xóa tài khoản:", err.message);
+            return res.status(500).json({ error: 'Lỗi máy chủ khi xóa tài khoản' });
         }
+        res.json({ success: true });
+    });
+});
 
-        function clearAllSelectedAttendees() {
-            toggleAllStaffCheckbox(false);
-            const customInput = document.getElementById('customAttendeesInput');
-            if (customInput) customInput.value = '';
-            renderAttendeesPreview();
-        }
+// ================= API PHÒNG HỌP (LOCATIONS) =================
+app.get('/api/locations', (req, res) => {
+    db.all('SELECT * FROM locations ORDER BY id ASC', (err, rows) => res.json(rows || []));
+});
 
-        function uncheckSingleAttendee(userId) {
-            onGlobalStaffCheckboxChange(userId, false);
-            const gChk = document.querySelector(`.chk-global-user-${userId}`);
-            if (gChk) gChk.checked = false;
-        }
+app.post('/api/locations', (req, res) => {
+    const { name } = req.body;
+    db.run('INSERT INTO locations (name) VALUES (?)', [name.trim()], function(err) {
+        if (err) return res.status(400).json({ error: 'Địa điểm đã tồn tại' });
+        res.json({ success: true, id: this ? this.lastID : 0 });
+    });
+});
 
-        function renderAttendeesPreview() {
-            const tagsContainer = document.getElementById('selectedAttendeesTags');
-            if (!tagsContainer) return;
+app.delete('/api/locations/:id', (req, res) => {
+    const id = Number(req.params.id);
+    db.run('DELETE FROM locations WHERE id = ? OR id = ?', [req.params.id, id], () => res.json({ success: true }));
+});
 
-            const selectedMap = new Map();
-            document.querySelectorAll('.chk-tree-global:checked, .chk-tree-child:checked').forEach(chk => {
-                const uId = chk.getAttribute('data-user-id');
-                const uName = chk.getAttribute('data-user-name');
-                const uTitle = chk.getAttribute('data-user-title');
-                const val = chk.value;
-                if (uId && !selectedMap.has(uId)) {
-                    selectedMap.set(uId, { id: uId, name: uName, title: uTitle, value: val });
-                }
-            });
+// ================= API NHÓM TRIỆU TẬP (ATTENDEE GROUPS) =================
+app.get('/api/groups', (req, res) => {
+    db.all('SELECT * FROM attendee_groups ORDER BY id ASC', (err, rows) => res.json(rows || []));
+});
 
-            const selectedList = Array.from(selectedMap.values());
-            const badgeCount = document.getElementById('selectedCountBadge');
-            if (badgeCount) badgeCount.innerText = selectedList.length;
+app.post('/api/groups', (req, res) => {
+    const { name, member_ids } = req.body;
+    db.run('INSERT INTO attendee_groups (name, member_ids) VALUES (?, ?)', [name.trim(), member_ids], function(err) {
+        if (err) return res.status(400).json({ error: 'Tên nhóm đã tồn tại' });
+        res.json({ success: true, id: this ? this.lastID : 0 });
+    });
+});
 
-            if (selectedList.length === 0) {
-                tagsContainer.innerHTML = '<span class="text-xs text-slate-400 italic">Chưa chọn cán bộ nào</span>';
-            } else {
-                tagsContainer.innerHTML = '';
-                selectedList.forEach(item => {
-                    const tag = document.createElement('span');
-                    tag.className = 'inline-flex items-center gap-1 bg-blue-100 text-[#00529C] px-2 py-0.5 rounded-full text-[11px] font-semibold border border-blue-200';
-                    tag.innerHTML = `
-                        <span>${item.name}</span>
-                        <button type="button" onclick="uncheckSingleAttendee(${item.id})" class="text-blue-500 hover:text-red-600 ml-0.5 font-bold">&times;</button>
-                    `;
-                    tagsContainer.appendChild(tag);
-                });
-            }
+app.put('/api/groups/:id', (req, res) => {
+    const id = Number(req.params.id);
+    const { name, member_ids } = req.body;
+    db.run('UPDATE attendee_groups SET name = ?, member_ids = ? WHERE id = ? OR id = ?', [name.trim(), member_ids, req.params.id, id], (err) => {
+        if (err) return res.status(500).json({ error: 'Lỗi cập nhật nhóm' });
+        res.json({ success: true });
+    });
+});
 
-            const checkedValues = selectedList.map(c => c.value);
-            const customText = document.getElementById('customAttendeesInput') ? document.getElementById('customAttendeesInput').value.trim() : '';
+app.delete('/api/groups/:id', (req, res) => {
+    const id = Number(req.params.id);
+    db.run('DELETE FROM attendee_groups WHERE id = ? OR id = ?', [req.params.id, id], () => res.json({ success: true }));
+});
 
-            const parts = [];
-            if (checkedValues.length > 0) parts.push(checkedValues.join(', '));
-            if (customText) parts.push(customText);
+// ================= API BAN / ĐƠN VỊ & CHỨC VỤ =================
+app.get('/api/departments', (req, res) => {
+    db.all('SELECT * FROM departments ORDER BY id ASC', (err, rows) => res.json(rows || []));
+});
 
-            const previewEl = document.getElementById('combinedAttendeesPreview');
-            if (previewEl) {
-                if (parts.length === 0) {
-                    previewEl.innerText = 'Chưa chọn thành phần tham dự';
-                    previewEl.className = 'italic text-slate-500 text-xs';
-                } else {
-                    previewEl.innerText = parts.join('; ');
-                    previewEl.className = 'font-semibold text-slate-800 text-xs';
-                }
-            }
-        }
+app.post('/api/departments', (req, res) => {
+    db.run('INSERT INTO departments (name) VALUES (?)', [req.body.name.trim()], function(err) {
+        if (err) return res.status(400).json({ error: 'Ban / Đơn vị đã tồn tại' });
+        res.json({ success: true, id: this ? this.lastID : 0 });
+    });
+});
 
-        function getFinalAttendeesValue() {
-            const selectedMap = new Map();
-            document.querySelectorAll('.chk-tree-global:checked, .chk-tree-child:checked').forEach(chk => {
-                const uId = chk.getAttribute('data-user-id');
-                if (uId && !selectedMap.has(uId)) {
-                    selectedMap.set(uId, chk.value);
-                }
-            });
+app.delete('/api/departments/:id', (req, res) => {
+    const id = Number(req.params.id);
+    db.run('DELETE FROM departments WHERE id = ? OR id = ?', [req.params.id, id], () => res.json({ success: true }));
+});
 
-            const checkedValues = Array.from(selectedMap.values());
-            const customText = document.getElementById('customAttendeesInput') ? document.getElementById('customAttendeesInput').value.trim() : '';
+app.get('/api/titles', (req, res) => {
+    db.all('SELECT * FROM titles ORDER BY id ASC', (err, rows) => res.json(rows || []));
+});
 
-            const parts = [];
-            if (checkedValues.length > 0) parts.push(checkedValues.join(', '));
-            if (customText) parts.push(customText);
-            return parts.join('; ');
-        }
-        
-        // ================= NOTIFICATIONS =================
-        async function loadUserNotifications() {
-            if (!currentUser) return;
-            try {
-                const res = await fetch(`/api/notifications?user_id=${currentUser.id}&user_name=${encodeURIComponent(currentUser.full_name)}`);
-                userNotifications = await res.json();
-                renderNotificationsUI();
-            } catch (err) {
-                console.error(err);
-            }
-        }
+app.post('/api/titles', (req, res) => {
+    db.run('INSERT INTO titles (name) VALUES (?)', [req.body.name.trim()], function(err) {
+        if (err) return res.status(400).json({ error: 'Chức vụ đã tồn tại' });
+        res.json({ success: true, id: this ? this.lastID : 0 });
+    });
+});
 
-        function renderNotificationsUI() {
-            const bell = document.getElementById('notifBellWrapper');
-            if (!currentUser) {
-                bell.classList.add('hidden');
-                return;
-            }
-            bell.classList.remove('hidden');
+app.delete('/api/titles/:id', (req, res) => {
+    const id = Number(req.params.id);
+    db.run('DELETE FROM titles WHERE id = ? OR id = ?', [req.params.id, id], () => res.json({ success: true }));
+});
 
-            const unread = userNotifications.filter(n => n.is_read === 0);
-            const countBadge = document.getElementById('notifCountBadge');
-            const dotBadge = document.getElementById('notifBadge');
+// ================= API LỊCH CÔNG TÁC & RÀ SOÁT TRÙNG LỊCH =================
+app.get('/api/schedules', (req, res) => {
+    db.all('SELECT * FROM schedules ORDER BY date ASC, start_time ASC', (err, rows) => res.json(rows || []));
+});
 
-            if (unread.length > 0) {
-                countBadge.innerText = unread.length;
-                countBadge.classList.remove('hidden');
-                dotBadge.classList.remove('hidden');
-            } else {
-                countBadge.classList.add('hidden');
-                dotBadge.classList.add('hidden');
-            }
+app.get('/api/schedules/public', (req, res) => {
+    const { department } = req.query;
+    let query = 'SELECT * FROM schedules WHERE status = "approved"';
+    const params = [];
+    if (department && department !== 'all') {
+        query += ' AND department = ?';
+        params.push(department);
+    }
+    query += ' ORDER BY date ASC, start_time ASC';
+    db.all(query, params, (err, rows) => res.json(rows || []));
+});
 
-            const listContainer = document.getElementById('notifListContainer');
-            if (userNotifications.length === 0) {
-                listContainer.innerHTML = '<div class="text-center py-6 text-slate-400 italic">Đồng chí chưa có thông báo cuộc họp nào</div>';
-                return;
-            }
+// Rà soát trùng lịch phòng họp hoặc người chủ trì
+app.get('/api/schedules/:id/check-conflict', (req, res) => {
+    const scheduleId = Number(req.params.id);
+    db.get('SELECT * FROM schedules WHERE id = ? OR id = ?', [req.params.id, scheduleId], (err, current) => {
+        if (err || !current) return res.json({ hasConflict: false });
 
-            listContainer.innerHTML = '';
-            userNotifications.forEach(n => {
-                const item = document.createElement('div');
-                const isUnread = n.is_read === 0;
-                item.className = `p-2.5 transition hover:bg-slate-50 ${isUnread ? 'bg-blue-50/70 font-semibold' : 'bg-white'}`;
-                
-                const roleTag = n.role_in_meeting === 'chairperson' 
-                    ? '<span class="bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded text-[10px] font-bold">CHỦ TRÌ</span>' 
-                    : '<span class="bg-blue-100 text-blue-800 px-1.5 py-0.2 rounded text-[10px] font-bold">THAM DỰ</span>';
+        db.all('SELECT * FROM schedules WHERE date = ? AND status = "approved" AND id != ?', [current.date, current.id], (err2, approvedList) => {
+            if (err2 || !approvedList || approvedList.length === 0) return res.json({ hasConflict: false });
 
-                item.innerHTML = `
-                    <div class="flex items-center justify-between gap-1 mb-1">
-                        ${roleTag}
-                        <span class="text-[10px] text-slate-400">${n.meeting_date} (${n.meeting_time})</span>
-                    </div>
-                    <div class="text-slate-800 text-xs mb-1">${n.message}</div>
-                    <div class="text-[11px] text-slate-500 flex items-center gap-1">
-                        <i class="fa-solid fa-location-dot text-emerald-600"></i> ${n.meeting_location}
-                    </div>
-                `;
-                listContainer.appendChild(item);
-            });
-        }
-
-        function toggleNotificationPanel() {
-            const dropdown = document.getElementById('notifDropdown');
-            dropdown.classList.toggle('hidden');
-        }
-
-        async function markAllNotificationsRead() {
-            if (!currentUser) return;
-            try {
-                await fetch('/api/notifications/mark-read', {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: currentUser.id })
-                });
-                await loadUserNotifications();
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        // ================= USER SELF CHANGE PASSWORD =================
-        function openChangePasswordModal() {
-            document.getElementById('pwdCurrent').value = '';
-            document.getElementById('pwdNew').value = '';
-            document.getElementById('pwdConfirm').value = '';
-            document.getElementById('pwdAlert').classList.add('hidden');
-            document.getElementById('changePasswordModal').classList.remove('hidden');
-        }
-
-        function closeChangePasswordModal() {
-            document.getElementById('changePasswordModal').classList.add('hidden');
-        }
-
-        async function handleChangePasswordSubmit(e) {
-            e.preventDefault();
-            const alertBox = document.getElementById('pwdAlert');
-            alertBox.classList.add('hidden');
-
-            const curPwd = document.getElementById('pwdCurrent').value;
-            const newPwd = document.getElementById('pwdNew').value;
-            const cfmPwd = document.getElementById('pwdConfirm').value;
-
-            if (newPwd !== cfmPwd) {
-                alertBox.className = 'text-xs p-2 rounded border bg-red-50 text-red-700 border-red-200';
-                alertBox.innerText = 'Mật khẩu mới và xác nhận mật khẩu không khớp!';
-                alertBox.classList.remove('hidden');
-                return;
-            }
-
-            try {
-                const res = await fetch('/api/users/change-password', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        user_id: currentUser.id,
-                        current_password: curPwd,
-                        new_password: newPwd
-                    })
-                });
-                const data = await res.json();
-                if (!res.ok) {
-                    alertBox.className = 'text-xs p-2 rounded border bg-red-50 text-red-700 border-red-200';
-                    alertBox.innerText = data.error;
-                    alertBox.classList.remove('hidden');
-                    return;
-                }
-
-                alert('Đổi mật khẩu thành công!');
-                closeChangePasswordModal();
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        // ================= ADMIN EDIT USER & RESET PASSWORD =================
-        function openEditUserModal(user) {
-            document.getElementById('editUserId').value = user.id;
-            document.getElementById('editUsername').value = user.username;
-            document.getElementById('editFullName').value = user.full_name;
-            document.getElementById('editTitle').value = user.title || '';
-            document.getElementById('editDepartment').value = user.department;
-            document.getElementById('editRole').value = user.role;
-            document.getElementById('editCanApprove').checked = user.can_approve === 1;
-            document.getElementById('editUserModal').classList.remove('hidden');
-        }
-
-        function closeEditUserModal() {
-            document.getElementById('editUserModal').classList.add('hidden');
-        }
-
-        async function handleEditUserSubmit(e) {
-            e.preventDefault();
-            const id = document.getElementById('editUserId').value;
-            const payload = {
-                full_name: document.getElementById('editFullName').value.trim(),
-                title: document.getElementById('editTitle').value,
-                department: document.getElementById('editDepartment').value,
-                role: document.getElementById('editRole').value,
-                can_approve: document.getElementById('editCanApprove').checked ? 1 : 0
-            };
-
-            try {
-                const res = await fetch(`/api/users/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                if (!res.ok) {
-                    alert(data.error);
-                    return;
-                }
-                alert('Cập nhật thông tin cán bộ thành công!');
-                closeEditUserModal();
-                await loadAllUsers();
-                loadUsersList();
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        async function adminResetPassword(userId, userName) {
-            if (!confirm(`Đồng chí có chắc chắn muốn đặt lại mật khẩu cho tài khoản "${userName}" về mặc định (123456)?`)) return;
-
-            try {
-                const res = await fetch(`/api/users/${userId}/reset-password`, {
-                    method: 'POST'
-                });
-                const data = await res.json();
-                if (data.success) {
-                    alert(`Đã đặt lại mật khẩu cho cán bộ "${userName}" thành công! Mật khẩu là 123456.`);
-                }
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        // ================= ADMIN SUBTABS & CRUD =================
-        function switchAdminSubtab(tab) {
-            document.getElementById('adminPanelUsers').classList.add('hidden');
-            document.getElementById('adminPanelLocs').classList.add('hidden');
-            document.getElementById('adminPanelGroups').classList.add('hidden');
-            document.getElementById('adminPanelDepts').classList.add('hidden');
-            document.getElementById('adminPanelTitles').classList.add('hidden');
-
-            document.getElementById('subtabBtnUsers').className = 'pb-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-semibold whitespace-nowrap';
-            document.getElementById('subtabBtnLocs').className = 'pb-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-semibold whitespace-nowrap';
-            document.getElementById('subtabBtnGroups').className = 'pb-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-semibold whitespace-nowrap';
-            document.getElementById('subtabBtnDepts').className = 'pb-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-semibold whitespace-nowrap';
-            document.getElementById('subtabBtnTitles').className = 'pb-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-semibold whitespace-nowrap';
-
-            if (tab === 'users') {
-                document.getElementById('adminPanelUsers').classList.remove('hidden');
-                document.getElementById('subtabBtnUsers').className = 'pb-2 border-b-2 border-[#00529C] text-[#00529C] font-bold whitespace-nowrap';
-                loadUsersList();
-            } else if (tab === 'locs') {
-                document.getElementById('adminPanelLocs').classList.remove('hidden');
-                document.getElementById('subtabBtnLocs').className = 'pb-2 border-b-2 border-blue-600 text-blue-700 font-bold whitespace-nowrap';
-                renderLocationTable();
-            } else if (tab === 'groups') {
-                document.getElementById('adminPanelGroups').classList.remove('hidden');
-                document.getElementById('subtabBtnGroups').className = 'pb-2 border-b-2 border-amber-600 text-amber-700 font-bold whitespace-nowrap';
-                renderGroupTable();
-                populateGroupMemberCheckboxes();
-            } else if (tab === 'depts') {
-                document.getElementById('adminPanelDepts').classList.remove('hidden');
-                document.getElementById('subtabBtnDepts').className = 'pb-2 border-b-2 border-emerald-600 text-emerald-700 font-bold whitespace-nowrap';
-                renderDeptTable();
-            } else if (tab === 'titles') {
-                document.getElementById('adminPanelTitles').classList.remove('hidden');
-                document.getElementById('subtabBtnTitles').className = 'pb-2 border-b-2 border-blue-600 text-blue-700 font-bold whitespace-nowrap';
-                renderTitleTable();
-            }
-        }
-
-        async function handleCreateLocation(e) {
-            e.preventDefault();
-            const name = document.getElementById('newLocName').value.trim();
-            if (!name) return;
-            try {
-                const res = await fetch('/api/locations', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name })
-                });
-                const data = await res.json();
-                if (!res.ok) {
-                    alert(data.error);
-                    return;
-                }
-                document.getElementById('newLocName').value = '';
-                await loadLocations();
-                alert(`Đã thêm địa điểm: "${name}"`);
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        function renderLocationTable() {
-            const tbody = document.getElementById('locTableBody');
-            tbody.innerHTML = '';
-            locationsList.forEach((l, idx) => {
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-50';
-                tr.innerHTML = `
-                    <td class="p-2 text-slate-500 font-mono text-xs">${idx + 1}</td>
-                    <td class="p-2 font-bold text-slate-800">${l.name}</td>
-                    <td class="p-2 text-right">
-                        <button onclick="deleteLocation(${l.id}, '${l.name}')" class="text-red-500 hover:text-red-700 p-1">
-                            <i class="fa-regular fa-trash-can"></i>
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        async function deleteLocation(id, name) {
-            if (!confirm(`Đồng chí có chắc chắn muốn xóa địa điểm "${name}"?`)) return;
-            try {
-                await fetch(`/api/locations/${id}`, { method: 'DELETE' });
-                await loadLocations();
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        function populateGroupMemberCheckboxes() {
-            const container = document.getElementById('groupMembersCheckboxes');
-            container.innerHTML = '';
-            usersList.forEach(u => {
-                if (u.username === 'admin') return;
-                const label = document.createElement('label');
-                label.className = 'flex items-center gap-2 cursor-pointer hover:bg-slate-200/60 p-1 rounded';
-                label.innerHTML = `
-                    <input type="checkbox" value="${u.id}" class="chk-grp-member rounded text-amber-600">
-                    <span>${u.full_name} <span class="text-slate-500">(${u.title || 'Cán bộ'})</span></span>
-                `;
-                container.appendChild(label);
-            });
-        }
-
-        async function handleCreateGroup(e) {
-            e.preventDefault();
-            const name = document.getElementById('newGroupName').value.trim();
-            const memberIds = Array.from(document.querySelectorAll('.chk-grp-member:checked')).map(c => c.value).join(',');
-            if (!name) return;
-            if (!memberIds) {
-                alert('Vui lòng chọn ít nhất 1 cán bộ vào nhóm!');
-                return;
-            }
-            try {
-                const res = await fetch('/api/groups', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, member_ids: memberIds })
-                });
-                const data = await res.json();
-                if (!res.ok) {
-                    alert(data.error);
-                    return;
-                }
-                document.getElementById('newGroupName').value = '';
-                document.querySelectorAll('.chk-grp-member').forEach(c => c.checked = false);
-                await loadAllUsers();
-                await loadGroups();
-                alert(`Đã tạo nhóm: "${name}"!`);
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        function renderGroupTable() {
-            const tbody = document.getElementById('groupTableBody');
-            if (!tbody) return;
-            tbody.innerHTML = '';
-
-            if (!groupsList || groupsList.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-slate-400 italic">Chưa có nhóm nào</td></tr>';
-                return;
-            }
-
-            groupsList.forEach((g, idx) => {
-                const ids = (g.member_ids || '').split(',').map(s => s.trim()).filter(Boolean);
-                const memberBadges = [];
-
-                ids.forEach(id => {
-                    const u = usersList ? usersList.find(user => String(user.id) === String(id)) : null;
-                    if (u) {
-                        memberBadges.push(`<span class="inline-block bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-[11px] mr-1 mb-1 border border-slate-200">${u.full_name}</span>`);
+            let conflictMsg = '';
+            for (const item of approvedList) {
+                // Kiểm tra giao thoa thời gian: max(start1, start2) < min(end1, end2)
+                const isTimeOverlap = (current.start_time < item.end_time) && (item.start_time < current.end_time);
+                if (isTimeOverlap) {
+                    if (current.location === item.location) {
+                        conflictMsg = `Trùng phòng họp "${current.location}" với cuộc họp: "${item.title}" (${item.start_time} - ${item.end_time}).`;
+                        break;
                     }
-                });
-
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-50';
-                tr.innerHTML = `
-                    <td class="p-2 text-slate-500 font-mono text-xs">${idx + 1}</td>
-                    <td class="p-2 font-bold text-slate-800 whitespace-nowrap">${g.name}</td>
-                    <td class="p-2 text-xs text-slate-600">${memberBadges.length > 0 ? memberBadges.join('') : '<span class="italic text-slate-400">Chưa có thành viên</span>'}</td>
-                    <td class="p-2 text-right whitespace-nowrap">
-                        <div class="flex items-center justify-end gap-1">
-                            <button onclick='openEditGroupModal(${JSON.stringify(g)})' class="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded text-xs font-semibold flex items-center gap-1 border border-amber-300">
-                                <i class="fa-solid fa-user-plus text-amber-600"></i> Thành viên
-                            </button>
-                            <button onclick="deleteGroup(${g.id}, '${g.name}')" class="p-1 text-red-500 hover:text-red-700 ml-1">
-                                <i class="fa-regular fa-trash-can"></i>
-                            </button>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function openEditGroupModal(group) {
-            document.getElementById('editGroupId').value = group.id;
-            document.getElementById('editGroupName').value = group.name;
-
-            const currentMemberIds = (group.member_ids || '').split(',').map(s => s.trim());
-            const container = document.getElementById('editGroupMembersContainer');
-            container.innerHTML = '';
-
-            usersList.forEach(u => {
-                if (u.username === 'admin') return;
-                const isMember = currentMemberIds.includes(String(u.id));
-
-                const label = document.createElement('label');
-                label.className = `flex items-center gap-2 p-1.5 rounded cursor-pointer transition ${isMember ? 'bg-amber-50 border border-amber-300 font-medium' : 'hover:bg-slate-100 border border-transparent'}`;
-                label.innerHTML = `
-                    <input type="checkbox" value="${u.id}" ${isMember ? 'checked' : ''} class="chk-edit-grp-member rounded text-amber-600 w-3.5 h-3.5">
-                    <span class="text-xs"><b>${u.full_name}</b> <span class="text-slate-400">(${u.title || 'Cán bộ'})</span></span>
-                `;
-                container.appendChild(label);
-            });
-
-            document.getElementById('editGroupModal').classList.remove('hidden');
-        }
-
-        function closeEditGroupModal() {
-            document.getElementById('editGroupModal').classList.add('hidden');
-        }
-
-        async function handleEditGroupSubmit(e) {
-            e.preventDefault();
-            const id = document.getElementById('editGroupId').value;
-            const name = document.getElementById('editGroupName').value.trim();
-            const memberIds = Array.from(document.querySelectorAll('.chk-edit-grp-member:checked')).map(c => c.value).join(',');
-
-            if (!name) return;
-            if (!memberIds) {
-                alert('Vui lòng chọn ít nhất 1 cán bộ vào nhóm!');
-                return;
-            }
-
-            try {
-                const res = await fetch(`/api/groups/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, member_ids: memberIds })
-                });
-                const data = await res.json();
-                if (!res.ok) {
-                    alert(data.error);
-                    return;
-                }
-                alert('Đã cập nhật nhóm thành công!');
-                closeEditGroupModal();
-                await loadAllUsers();
-                await loadGroups();
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        async function deleteGroup(id, name) {
-            if (!confirm(`Đồng chí có chắc muốn xóa nhóm "${name}"?`)) return;
-            try {
-                await fetch(`/api/groups/${id}`, { method: 'DELETE' });
-                await loadGroups();
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        // Departments & Titles CRUD
-        async function handleCreateDepartment(e) {
-            e.preventDefault();
-            const name = document.getElementById('newDeptName').value.trim();
-            if (!name) return;
-            try {
-                const res = await fetch('/api/departments', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name })
-                });
-                const data = await res.json();
-                if (!res.ok) {
-                    alert(data.error);
-                    return;
-                }
-                document.getElementById('newDeptName').value = '';
-                await loadDepartments();
-                alert(`Đã thêm ban: "${name}"`);
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        function renderDeptTable() {
-            const tbody = document.getElementById('deptTableBody');
-            tbody.innerHTML = '';
-            departmentsList.forEach((d, idx) => {
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-50';
-                tr.innerHTML = `
-                    <td class="p-2 text-slate-500 font-mono text-xs">${idx + 1}</td>
-                    <td class="p-2 font-bold text-slate-800">${d.name}</td>
-                    <td class="p-2 text-right">
-                        <button onclick="deleteDepartment(${d.id}, '${d.name}')" class="text-red-500 hover:text-red-700 p-1">
-                            <i class="fa-regular fa-trash-can"></i>
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        async function deleteDepartment(id, name) {
-            if (!confirm(`Đồng chí có chắc chắn muốn xóa ban "${name}"?`)) return;
-            try {
-                await fetch(`/api/departments/${id}`, { method: 'DELETE' });
-                await loadDepartments();
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        async function handleCreateTitle(e) {
-            e.preventDefault();
-            const name = document.getElementById('newTitleName').value.trim();
-            if (!name) return;
-            try {
-                const res = await fetch('/api/titles', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name })
-                });
-                const data = await res.json();
-                if (!res.ok) {
-                    alert(data.error);
-                    return;
-                }
-                document.getElementById('newTitleName').value = '';
-                await loadTitles();
-                alert(`Đã thêm chức vụ: "${name}"`);
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        function renderTitleTable() {
-            const tbody = document.getElementById('titleTableBody');
-            tbody.innerHTML = '';
-            titlesList.forEach((t, idx) => {
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-50';
-                tr.innerHTML = `
-                    <td class="p-2 text-slate-500 font-mono text-xs">${idx + 1}</td>
-                    <td class="p-2 font-bold text-slate-800">${t.name}</td>
-                    <td class="p-2 text-right">
-                        <button onclick="deleteTitle(${t.id}, '${t.name}')" class="text-red-500 hover:text-red-700 p-1">
-                            <i class="fa-regular fa-trash-can"></i>
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        async function deleteTitle(id, name) {
-            if (!confirm(`Đồng chí có chắc chắn muốn xóa chức vụ "${name}"?`)) return;
-            try {
-                await fetch(`/api/titles/${id}`, { method: 'DELETE' });
-                await loadTitles();
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        function onRoleSelectChange(role) {
-            const chkCanApprove = document.getElementById('newCanApprove');
-            chkCanApprove.checked = (role === 'approver' || role === 'admin');
-        }
-
-        // ================= AUTH & USER LIFECYCLE =================
-        function toggleRootStaffCheckbox(isChecked) {
-            toggleAllStaffCheckbox(isChecked);
-        }
-
-        function toggleOtherStaffCheckbox(isChecked) {
-            document.querySelectorAll('.chk-tree-global').forEach(c => {
-                c.checked = isChecked;
-                const uid = c.getAttribute('data-user-id');
-                document.querySelectorAll(`.chk-tree-child[data-user-id="${uid}"]`).forEach(ch => ch.checked = isChecked);
-            });
-            syncAllGroupHeaders();
-            renderAttendeesPreview();
-        }
-
-        async function loadMySchedulesList() {
-            const container = document.getElementById('mySchedulesListContainer');
-            if (!container) return;
-            container.innerHTML = '<div class="text-center py-6 text-slate-400 text-xs">Đang tải danh sách lịch bạn đã gửi...</div>';
-
-            try {
-                const res = await fetch('/api/schedules');
-                const allSchedules = await res.json();
-                
-                const mySchedules = currentUser ? allSchedules.filter(s => s.created_by_name === currentUser.full_name || (currentUser.role === 'admin')) : [];
-                
-                const pendingCount = mySchedules.filter(s => s.status === 'pending').length;
-                const badge = document.getElementById('myPendingBadge');
-                const mobBadge = document.getElementById('mobMyPendingBadge');
-                [badge, mobBadge].forEach(b => {
-                    if (b) {
-                        if (pendingCount > 0) {
-                            b.innerText = pendingCount;
-                            b.classList.remove('hidden');
-                        } else {
-                            b.classList.add('hidden');
-                        }
-                    }
-                });
-
-                if (mySchedules.length === 0) {
-                    container.innerHTML = `
-                        <div class="text-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-300">
-                            <i class="fa-regular fa-calendar-check text-3xl text-slate-400 mb-2"></i>
-                            <p class="font-bold text-slate-700 text-sm">Đồng chí chưa đăng ký cuộc họp nào!</p>
-                            <p class="text-xs text-slate-500">Bấm "Đăng ký lịch" để gửi cuộc họp mới.</p>
-                        </div>
-                    `;
-                    return;
-                }
-
-                container.innerHTML = '';
-                mySchedules.forEach(item => {
-                    const card = document.createElement('div');
-                    let statusBadge = '';
-                    let borderClass = '';
-
-                    if (item.status === 'approved') {
-                        statusBadge = `<span class="bg-emerald-100 text-emerald-800 border border-emerald-300 text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
-                            <i class="fa-solid fa-circle-check"></i> ĐÃ DUYỆT
-                        </span>`;
-                        borderClass = 'border-emerald-200 bg-emerald-50/30';
-                    } else if (item.status === 'rejected') {
-                        statusBadge = `<span class="bg-red-100 text-red-800 border border-red-300 text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
-                            <i class="fa-solid fa-triangle-exclamation"></i> CẦN SỬA
-                        </span>`;
-                        borderClass = 'border-red-200 bg-red-50/40';
-                    } else {
-                        statusBadge = `<span class="bg-amber-100 text-amber-800 border border-amber-300 text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
-                            <i class="fa-solid fa-clock"></i> CHỜ DUYỆT
-                        </span>`;
-                        borderClass = 'border-amber-200 bg-amber-50/30';
-                    }
-
-                    card.className = `p-3.5 rounded-xl border transition ${borderClass} space-y-1.5`;
-                    card.innerHTML = `
-                        <div class="flex items-center justify-between gap-2 border-b border-slate-200/80 pb-1.5">
-                            <span class="text-xs font-bold text-[#00529C] bg-blue-100 px-2 py-0.5 rounded">${item.department}</span>
-                            <div>${statusBadge}</div>
-                        </div>
-
-                        <div>
-                            <h4 class="font-bold text-slate-900 text-sm leading-snug">${item.title}</h4>
-                            <div class="text-xs text-slate-600 space-y-0.5 mt-1">
-                                <div><b class="text-slate-700">Thời gian:</b> ${item.date} (${item.start_time} - ${item.end_time})</div>
-                                <div><b class="text-slate-700">Địa điểm:</b> ${item.location}</div>
-                                <div><b class="text-slate-700">Chủ trì:</b> <span class="text-blue-900 font-semibold">${item.chairperson}</span></div>
-                                <div><b class="text-slate-700">Thành phần:</b> ${item.attendees}</div>
-                            </div>
-                        </div>
-
-                        ${item.status === 'rejected' && item.reject_reason ? `
-                            <div class="p-2 bg-red-100 border border-red-200 text-red-900 rounded text-xs font-medium">
-                                <b>Lý do yêu cầu sửa:</b> ${item.reject_reason}
-                            </div>
-                        ` : ''}
-
-                        ${item.note ? `<div class="text-[11px] text-slate-500 italic bg-white/70 p-1.5 rounded border border-slate-200">Ghi chú: ${item.note}</div>` : ''}
-                    `;
-                    container.appendChild(card);
-                });
-
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        function applyUserRole() {
-            const noticeText = document.getElementById('accessNoticeText');
-            const btnReg = document.getElementById('btnTabRegister');
-            const btnMySched = document.getElementById('btnTabMySchedules');
-            const btnAppr = document.getElementById('btnTabApprovals');
-            const btnAdm = document.getElementById('btnTabAdmin');
-            
-            const btnMobReg = document.getElementById('btnMobRegister');
-            const btnMobMySched = document.getElementById('btnMobMySched');
-            const btnMobAppr = document.getElementById('btnMobApprovals');
-            const btnMobAdm = document.getElementById('btnMobAdmin');
-
-            const loginSec = document.getElementById('loginSection');
-            const userMenu = document.getElementById('userMenuSection');
-            const mobLoginSec = document.getElementById('mobLoginSection');
-            const mobUserSec = document.getElementById('mobUserSection');
-            const mobNameDisp = document.getElementById('mobUserNameDisplay');
-
-            if (!currentUser) {
-                [btnReg, btnMySched, btnAppr, btnAdm, btnMobReg, btnMobMySched, btnMobAppr, btnMobAdm].forEach(b => { if (b) b.classList.add('hidden'); });
-                if (loginSec) loginSec.style.display = 'block';
-                if (userMenu) userMenu.style.display = 'none';
-                if (mobLoginSec) mobLoginSec.style.display = 'block';
-                if (mobUserSec) mobUserSec.style.display = 'none';
-                document.getElementById('notifBellWrapper').classList.add('hidden');
-                noticeText.innerText = "Chế độ xem công khai: Đoàn viên xem lịch họp đã duyệt mà không cần đăng nhập.";
-                navigateTab('calendar');
-                return;
-            }
-
-            if (loginSec) loginSec.style.display = 'none';
-            if (userMenu) userMenu.style.display = 'flex';
-            if (mobLoginSec) mobLoginSec.style.display = 'none';
-            if (mobUserSec) mobUserSec.style.display = 'block';
-            if (mobNameDisp) mobNameDisp.innerText = `Đ/c: ${currentUser.full_name} (${currentUser.title || 'Cán bộ'})`;
-
-            [btnReg, btnMobReg, btnMySched, btnMobMySched].forEach(b => { if (b) b.classList.remove('hidden'); });
-            loadMySchedulesList();
-
-            const regDept = document.getElementById('regDepartment');
-            if (regDept) regDept.value = currentUser.department;
-
-            if (currentUser.can_approve === 1 || currentUser.role === 'approver') {
-                [btnAppr, btnMobAppr].forEach(b => { if (b) b.classList.remove('hidden'); });
-                loadPendingCount();
-            } else {
-                [btnAppr, btnMobAppr].forEach(b => { if (b) b.classList.add('hidden'); });
-            }
-
-            if (currentUser.role === 'admin') {
-                [btnAdm, btnMobAdm].forEach(b => { if (b) b.classList.remove('hidden'); });
-            } else {
-                [btnAdm, btnMobAdm].forEach(b => { if (b) b.classList.add('hidden'); });
-            }
-
-            noticeText.innerHTML = `Đang đăng nhập: <b>${currentUser.full_name}</b> (${currentUser.title || 'Cán bộ'} - ${currentUser.department}) ${currentUser.can_approve ? '<span class="text-emerald-700 font-bold">[Có quyền duyệt lịch]</span>' : ''}`;
-            
-            loadUserNotifications();
-            renderCalendar();
-        }
-
-        function logout() {
-            currentUser = null;
-            applyUserRole();
-        }
-
-        function navigateTab(tabName) {
-            ['tabCalendar', 'tabRegister', 'tabMySchedules', 'tabApprovals', 'tabAdmin'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.classList.add('hidden');
-            });
-
-            document.querySelectorAll('.nav-btn').forEach(b => {
-                b.classList.remove('bg-white/20');
-                b.classList.add('hover:bg-white/10');
-            });
-
-            if (tabName === 'mySchedules') {
-                const el = document.getElementById('tabMySchedules');
-                if (el) el.classList.remove('hidden');
-                const btn = document.getElementById('btnTabMySchedules');
-                if (btn) btn.classList.add('bg-white/20');
-                loadMySchedulesList();
-            } else if (tabName === 'calendar') {
-                document.getElementById('tabCalendar').classList.remove('hidden');
-                document.getElementById('btnTabCalendar').classList.add('bg-white/20');
-                renderCalendar();
-            } else if (tabName === 'register') {
-                document.getElementById('tabRegister').classList.remove('hidden');
-                document.getElementById('btnTabRegister').classList.add('bg-white/20');
-                loadAllUsers();
-                if (currentUser) {
-                    document.getElementById('regDepartment').value = currentUser.department;
-                }
-            } else if (tabName === 'approvals') {
-                document.getElementById('tabApprovals').classList.remove('hidden');
-                document.getElementById('btnTabApprovals').classList.add('bg-white/20');
-                loadPendingSchedules();
-            } else if (tabName === 'admin') {
-                document.getElementById('tabAdmin').classList.remove('hidden');
-                document.getElementById('btnTabAdmin').classList.add('bg-white/20');
-                switchAdminSubtab('users');
-            }
-        }
-
-        function getWeekDays(offset = 0) {
-            const now = new Date();
-            const currentDay = now.getDay();
-            const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
-            const monday = new Date(now);
-            monday.setDate(now.getDate() + diffToMonday + (offset * 7));
-
-            const days = [];
-            for (let i = 0; i < 7; i++) {
-                const d = new Date(monday);
-                d.setDate(monday.getDate() + i);
-                days.push(d);
-            }
-            return days;
-        }
-
-        function changeWeek(direction) {
-            currentWeekOffset += direction;
-            renderCalendar();
-        }
-
-        function goCurrentWeek() {
-            currentWeekOffset = 0;
-            renderCalendar();
-        }
-
-        async function renderCalendar() {
-            const weekDays = getWeekDays(currentWeekOffset);
-            const startStr = formatDateVN(weekDays[0]);
-            const endStr = formatDateVN(weekDays[6]);
-            document.getElementById('weekRangeLabel').innerText = `Tuần: ${startStr} - ${endStr}`;
-            document.getElementById('scheduleSubHeader').innerText = `(Từ ngày ${startStr} đến ngày ${endStr})`;
-
-            const deptFilter = document.getElementById('filterDepartment').value;
-            let url = '/api/schedules/public';
-            if (deptFilter !== 'all') {
-                url += `?department=${encodeURIComponent(deptFilter)}`;
-            }
-
-            try {
-                const res = await fetch(url);
-                const schedules = await res.json();
-                populateCalendarTable(weekDays, schedules);
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        function formatDateVN(d) {
-            return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-        }
-
-        function getIsoDate(d) {
-            return d.toISOString().split('T')[0];
-        }
-
-        const dayNames = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
-
-        // HÀM RENDER CẢ DẠNG BẢNG (DESKTOP) VÀ DẠNG THẺ (MOBILE)
-        function populateCalendarTable(weekDays, schedules) {
-            const tbody = document.getElementById('scheduleTableBody');
-            const mobileContainer = document.getElementById('scheduleMobileCards');
-            tbody.innerHTML = '';
-            mobileContainer.innerHTML = '';
-
-            weekDays.forEach((day) => {
-                const isoDate = getIsoDate(day);
-                const dayMeetings = schedules.filter(s => s.date === isoDate);
-                const dayName = dayNames[day.getDay()];
-                const dateDisplay = formatDateVN(day);
-
-                // --- 1. RENDER CHO BẢNG DESKTOP ---
-                if (dayMeetings.length === 0) {
-                    const row = document.createElement('tr');
-                    row.className = 'hover:bg-slate-50/50';
-                    row.innerHTML = `
-                        <td class="p-3 font-semibold text-slate-700 bg-slate-50/80 border-r border-slate-200">
-                            <div>${dayName}</div>
-                            <div class="text-xs text-slate-500 font-normal">${dateDisplay}</div>
-                        </td>
-                        <td class="p-3 text-center text-slate-400 italic text-xs border-r border-slate-200">-</td>
-                        <td class="p-3 text-slate-400 italic text-xs border-r border-slate-200">Không có lịch công tác</td>
-                        <td class="p-3 text-center text-slate-400 italic text-xs border-r border-slate-200">-</td>
-                        <td class="p-3 text-center text-slate-400 italic text-xs border-r border-slate-200">-</td>
-                        <td class="p-3 text-center text-slate-400 italic text-xs">-</td>
-                    `;
-                    tbody.appendChild(row);
-                } else {
-                    dayMeetings.forEach((m, idx) => {
-                        const row = document.createElement('tr');
-                        row.className = 'hover:bg-blue-50/40 transition';
-                        
-                        let dateCell = '';
-                        if (idx === 0) {
-                            dateCell = `
-                                <td rowspan="${dayMeetings.length}" class="p-3 font-semibold text-[#00529C] bg-blue-50/30 border-r border-slate-200 align-top">
-                                    <div class="font-bold">${dayName}</div>
-                                    <div class="text-xs text-slate-500 font-normal">${dateDisplay}</div>
-                                </td>
-                            `;
-                        }
-
-                        row.innerHTML = `
-                            ${dateCell}
-                            <td class="p-3 font-bold text-slate-700 border-r border-slate-200 whitespace-nowrap align-top">
-                                <span class="bg-slate-100 text-slate-800 px-2 py-0.5 rounded text-xs font-semibold">
-                                    ${m.start_time} - ${m.end_time}
-                                </span>
-                            </td>
-                            <td class="p-3 font-medium text-slate-800 border-r border-slate-200 align-top">
-                                <div class="font-bold text-slate-900">${m.title}</div>
-                                ${m.note ? `<div class="text-xs text-slate-500 italic mt-0.5"><i class="fa-solid fa-circle-exclamation text-amber-500 mr-1"></i>${m.note}</div>` : ''}
-                            </td>
-                            <td class="p-3 text-slate-700 border-r border-slate-200 align-top">
-                                <span class="inline-flex items-center gap-1 text-xs font-semibold bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded border border-emerald-200">
-                                    <i class="fa-solid fa-location-dot"></i> ${m.location}
-                                </span>
-                            </td>
-                            <td class="p-3 text-xs text-slate-700 border-r border-slate-200 align-top">
-                                <div class="font-bold text-slate-900 bg-amber-50 text-amber-900 p-1 rounded border border-amber-200 mb-1">
-                                    <i class="fa-solid fa-user-tie mr-1 text-[#00529C]"></i> ${m.chairperson}
-                                </div>
-                                <div class="text-slate-600"><b>Triệu tập:</b> ${m.attendees}</div>
-                            </td>
-                            <td class="p-3 text-xs font-medium text-slate-600 align-top">
-                                <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-bold">${m.department}</span>
-                                <div class="text-[11px] text-slate-400 mt-1">Duyệt: ${m.approved_by_name || 'Bí thư'}</div>
-                            </td>
-                        `;
-                        tbody.appendChild(row);
-                    });
-                }
-
-                // --- 2. RENDER CHO THẺ MOBILE (CARD VIEW) ---
-                const dayCardWrapper = document.createElement('div');
-                dayCardWrapper.className = 'bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs';
-
-                const dayHeader = document.createElement('div');
-                dayHeader.className = `px-3.5 py-2 flex items-center justify-between ${dayMeetings.length > 0 ? 'bg-[#00529C] text-white' : 'bg-slate-100 text-slate-600'}`;
-                dayHeader.innerHTML = `
-                    <div class="font-extrabold text-xs tracking-wide uppercase">${dayName}</div>
-                    <div class="text-[11px] font-semibold opacity-90">${dateDisplay}</div>
-                `;
-                dayCardWrapper.appendChild(dayHeader);
-
-                const cardBody = document.createElement('div');
-                cardBody.className = 'p-3 space-y-2.5';
-
-                if (dayMeetings.length === 0) {
-                    cardBody.innerHTML = '<div class="text-slate-400 text-xs italic text-center py-1">Không có lịch công tác</div>';
-                } else {
-                    dayMeetings.forEach(m => {
-                        const meetingItem = document.createElement('div');
-                        meetingItem.className = 'border-b border-slate-100 last:border-b-0 pb-2.5 last:pb-0 space-y-1.5';
-                        meetingItem.innerHTML = `
-                            <div class="flex items-center justify-between gap-1.5">
-                                <span class="inline-flex items-center gap-1 bg-blue-50 text-[#00529C] text-[11px] font-bold px-2 py-0.5 rounded border border-blue-200">
-                                    <i class="fa-regular fa-clock"></i> ${m.start_time} - ${m.end_time}
-                                </span>
-                                <span class="text-[10px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded">${m.department}</span>
-                            </div>
-                            <div class="font-bold text-slate-900 text-xs sm:text-sm leading-snug">${m.title}</div>
-                            <div class="text-xs space-y-1 text-slate-600 pt-0.5">
-                                <div class="flex items-start gap-1.5">
-                                    <i class="fa-solid fa-location-dot text-emerald-600 mt-0.5 shrink-0"></i>
-                                    <span>${m.location}</span>
-                                </div>
-                                <div class="flex items-start gap-1.5">
-                                    <i class="fa-solid fa-user-tie text-[#00529C] mt-0.5 shrink-0"></i>
-                                    <span class="font-semibold text-slate-800">${m.chairperson}</span>
-                                </div>
-                                <div class="flex items-start gap-1.5 text-[11px]">
-                                    <i class="fa-solid fa-users text-slate-400 mt-0.5 shrink-0"></i>
-                                    <span><b>Triệu tập:</b> ${m.attendees}</span>
-                                </div>
-                            </div>
-                            ${m.note ? `<div class="text-[11px] text-amber-800 bg-amber-50 p-1.5 rounded border border-amber-200 italic"><i class="fa-solid fa-circle-exclamation mr-1"></i>${m.note}</div>` : ''}
-                        `;
-                        cardBody.appendChild(meetingItem);
-                    });
-                }
-
-                dayCardWrapper.appendChild(cardBody);
-                mobileContainer.appendChild(dayCardWrapper);
-            });
-
-            // Tự động ký tên đầu tuần
-            try {
-                if (weekDays && weekDays.length > 0) {
-                    const monday = weekDays[0];
-                    const day = monday.getDate();
-                    const month = monday.getMonth() + 1;
-                    const year = monday.getFullYear();
-                    const dateEl = document.getElementById('footerSigningDate');
-                    if (dateEl) {
-                        dateEl.innerText = `Ngày ${day < 10 ? '0' + day : day} tháng ${month < 10 ? '0' + month : month} năm ${year}`;
+                    if (current.chairperson_name && item.chairperson_name && current.chairperson_name === item.chairperson_name) {
+                        conflictMsg = `Người chủ trì (${current.chairperson_name}) đã bận chủ trì cuộc họp: "${item.title}" (${item.start_time} - ${item.end_time}).`;
+                        break;
                     }
                 }
-
-                const approvedItem = (schedules && schedules.length > 0) ? schedules.find(s => s.approved_by_name && s.approved_by_name.trim() !== '') : null;
-                let approverName = approvedItem ? approvedItem.approved_by_name : (currentUser && currentUser.can_approve ? currentUser.full_name : 'Bí thư Đoàn');
-
-                const approverUser = (typeof usersList !== 'undefined' && usersList) ? usersList.find(u => u.full_name === approverName) : null;
-                let approverTitle = approverUser && approverUser.title ? approverUser.title.toUpperCase() : 'BÍ THƯ';
-
-                const nameEl = document.getElementById('footerApproverName');
-                const titleEl = document.getElementById('footerApproverTitle');
-                if (nameEl) nameEl.innerText = approverName;
-                if (titleEl) titleEl.innerText = approverTitle;
-            } catch (err) {
-                console.error("Lỗi người ký:", err);
             }
+
+            res.json({ hasConflict: !!conflictMsg, message: conflictMsg });
+        });
+    });
+});
+
+app.post('/api/schedules', (req, res) => {
+    const {
+        title, date, start_time, end_time, location, department,
+        chairperson, chairperson_name, attendees, note, created_by_name, role, can_approve
+    } = req.body;
+
+    const autoApprove = (can_approve === 1 || role === 'approver' || role === 'admin');
+    const status = autoApprove ? 'approved' : 'pending';
+    const approved_by_name = autoApprove ? created_by_name : null;
+
+    db.run(`INSERT INTO schedules (title, date, start_time, end_time, location, department, chairperson, chairperson_name, attendees, note, status, created_by_name, approved_by_name)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [title, date, start_time, end_time, location, department, chairperson, chairperson_name, attendees, note, status, created_by_name, approved_by_name],
+        function(err) {
+            if (err) return res.status(500).json({ error: 'Lỗi lưu cuộc họp' });
+            const newScheduleId = this ? this.lastID : 0;
+
+            // Nếu ban hành ngay, gửi thông báo đến các cán bộ tham dự
+            if (status === 'approved') {
+                createNotificationsForSchedule(newScheduleId, title, date, `${start_time} - ${end_time}`, location, chairperson_name, attendees);
+            }
+
+            res.json({ success: true, status, id: newScheduleId });
         }
+    );
+});
 
-        async function handleCreateSchedule(e) {
-            e.preventDefault();
-            const alertBox = document.getElementById('regAlert');
-            alertBox.classList.add('hidden');
+app.patch('/api/schedules/:id', (req, res) => {
+    const scheduleId = Number(req.params.id);
+    const { status, approved_by_name, reject_reason } = req.body;
 
-            const chairpersonVal = getFinalChairpersonValue();
-            if (!chairpersonVal) {
-                alertBox.className = 'p-3 rounded-lg text-xs font-semibold bg-red-100 text-red-800 border border-red-300';
-                alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> Vui lòng chọn người chủ trì!`;
-                alertBox.classList.remove('hidden');
-                return;
-            }
+    db.run('UPDATE schedules SET status = ?, approved_by_name = ?, reject_reason = ? WHERE id = ? OR id = ?',
+        [status, approved_by_name || null, reject_reason || null, req.params.id, scheduleId],
+        (err) => {
+            if (err) return res.status(500).json({ error: 'Lỗi cập nhật trạng thái lịch' });
 
-            const attendeesVal = getFinalAttendeesValue();
-            if (!attendeesVal) {
-                alertBox.className = 'p-3 rounded-lg text-xs font-semibold bg-red-100 text-red-800 border border-red-300';
-                alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> Vui lòng chọn cán bộ tham dự!`;
-                alertBox.classList.remove('hidden');
-                return;
-            }
-
-            const regDate = document.getElementById('regDate').value;
-            const regStartTime = document.getElementById('regStartTime').value;
-            const regEndTime = document.getElementById('regEndTime').value;
-
-            const startDateTime = new Date(`${regDate}T${regStartTime}:00`);
-            const now = new Date();
-
-            if (startDateTime < now) {
-                alertBox.className = 'p-3 rounded-lg text-xs font-semibold bg-red-100 text-red-800 border border-red-300';
-                alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> Giờ bắt đầu không được trước thời gian hiện tại!`;
-                alertBox.classList.remove('hidden');
-                return;
-            }
-
-            if (regEndTime <= regStartTime) {
-                alertBox.className = 'p-3 rounded-lg text-xs font-semibold bg-red-100 text-red-800 border border-red-300';
-                alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> Giờ kết thúc phải sau giờ bắt đầu!`;
-                alertBox.classList.remove('hidden');
-                return;
-            }
-
-            const payload = {
-                title: document.getElementById('regTitle').value.trim(),
-                date: regDate,
-                start_time: regStartTime,
-                end_time: regEndTime,
-                location: document.getElementById('regLocation').value,
-                department: document.getElementById('regDepartment').value || (currentUser ? currentUser.department : 'Văn phòng Đoàn'),
-                chairperson: chairpersonVal,
-                chairperson_name: getRawLeaderName(),
-                attendees: attendeesVal,
-                note: document.getElementById('regNote').value.trim(),
-                created_by_name: currentUser ? currentUser.full_name : 'Cán bộ',
-                role: currentUser ? currentUser.role : 'staff',
-                can_approve: currentUser ? currentUser.can_approve : 0
-            };
-
-            try {
-                const res = await fetch('/api/schedules', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                if (!res.ok) {
-                    alertBox.className = 'p-3 rounded-lg text-xs font-semibold bg-red-100 text-red-800 border border-red-300';
-                    alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1.5"></i> ${data.error}`;
-                    alertBox.classList.remove('hidden');
-                    return;
-                }
-
-                alertBox.className = 'p-3 rounded-lg text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300';
-                alertBox.innerHTML = `<i class="fa-solid fa-circle-check mr-1.5"></i> ${data.status === 'approved' ? 'Cuộc họp đã được ban hành trực tiếp lên lịch tuần!' : 'Đã gửi đăng ký thành công! Đang chờ Bí thư phê duyệt.'}`;
-                alertBox.classList.remove('hidden');
-
-                document.getElementById('formRegisterSchedule').reset();
-                setInitialDate();
-                clearAllSelectedAttendees();
-                document.getElementById('customAttendeesInput').value = '';
-                renderAttendeesPreview();
-                document.getElementById('previewChairperson').innerText = 'Chưa chọn';
-                if (currentUser) {
-                    document.getElementById('regDepartment').value = currentUser.department;
-                }
-
-                setTimeout(() => {
-                    navigateTab('calendar');
-                }, 1400);
-
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        async function loadPendingCount() {
-            try {
-                const res = await fetch('/api/schedules');
-                const list = await res.json();
-                const pending = list.filter(s => s.status === 'pending');
-                const badge = document.getElementById('pendingBadge');
-                const mobBadge = document.getElementById('mobPendingBadge');
-                [badge, mobBadge].forEach(b => {
-                    if (b) {
-                        if (pending.length > 0) {
-                            b.innerText = pending.length;
-                            b.classList.remove('hidden');
-                        } else {
-                            b.classList.add('hidden');
-                        }
+            if (status === 'approved') {
+                db.get('SELECT * FROM schedules WHERE id = ? OR id = ?', [req.params.id, scheduleId], (err2, item) => {
+                    if (!err2 && item) {
+                        createNotificationsForSchedule(item.id, item.title, item.date, `${item.start_time} - ${item.end_time}`, item.location, item.chairperson_name, item.attendees);
                     }
                 });
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        async function loadPendingSchedules() {
-            loadPendingCount();
-            const container = document.getElementById('approvalsList');
-            container.innerHTML = '<div class="text-center py-6 text-slate-400 text-xs">Đang kiểm tra rà soát trùng lịch...</div>';
-
-            try {
-                const res = await fetch('/api/schedules');
-                const list = await res.json();
-                const pending = list.filter(s => s.status === 'pending');
-
-                if (pending.length === 0) {
-                    container.innerHTML = `
-                        <div class="text-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-300">
-                            <i class="fa-regular fa-circle-check text-3xl text-emerald-500 mb-2"></i>
-                            <p class="font-bold text-slate-700 text-sm">Không có lịch nào cần duyệt!</p>
-                            <p class="text-xs text-slate-500">Tất cả lịch tuần đã được xử lý xong.</p>
-                        </div>
-                    `;
-                    return;
-                }
-
-                container.innerHTML = '';
-                
-                for (const item of pending) {
-                    const checkRes = await fetch(`/api/schedules/${item.id}/check-conflict`);
-                    const checkData = await checkRes.json();
-
-                    const card = document.createElement('div');
-                    let conflictHtml = '';
-                    let borderClass = 'border-amber-200 bg-amber-50/40';
-
-                    if (checkData.hasConflict) {
-                        borderClass = 'border-red-300 bg-red-50/60 shadow-xs';
-                        conflictHtml = `
-                            <div class="p-2.5 bg-red-100 border border-red-300 text-red-900 rounded-lg text-xs font-medium space-y-0.5 mt-2">
-                                <div class="font-bold flex items-center gap-1 text-red-800">
-                                    <i class="fa-solid fa-triangle-exclamation"></i> TRÙNG LỊCH:
-                                </div>
-                                <div>${checkData.message}</div>
-                            </div>
-                        `;
-                    }
-
-                    card.className = `p-3.5 rounded-xl border transition flex flex-col md:flex-row md:items-center justify-between gap-3 ${borderClass}`;
-                    card.innerHTML = `
-                        <div class="space-y-1.5 flex-1">
-                            <div class="flex items-center gap-2">
-                                <span class="bg-amber-200 text-amber-900 text-[10px] px-2 py-0.5 rounded font-bold uppercase">Chờ duyệt</span>
-                                <span class="text-xs font-semibold text-slate-500">${item.date} (${item.start_time} - ${item.end_time})</span>
-                                <span class="text-xs bg-blue-100 text-[#00529C] px-2 py-0.5 rounded font-bold">${item.department}</span>
-                            </div>
-                            <h4 class="font-bold text-slate-900 text-sm leading-snug">${item.title}</h4>
-                            <div class="text-xs text-slate-600 space-y-0.5">
-                                <div><b class="text-slate-700">Phòng:</b> ${item.location}</div>
-                                <div><b class="text-slate-700">Chủ trì:</b> <span class="text-blue-900 font-bold">${item.chairperson}</span></div>
-                                <div><b class="text-slate-700">Triệu tập:</b> ${item.attendees}</div>
-                                <div><b class="text-slate-700">Người gửi:</b> ${item.created_by_name}</div>
-                            </div>
-                            ${item.note ? `<div class="text-[11px] text-slate-500 italic bg-white/60 p-1.5 rounded border border-slate-200">Ghi chú: ${item.note}</div>` : ''}
-                            ${conflictHtml}
-                        </div>
-                        <div class="flex items-center gap-2 pt-2 md:pt-0 border-t md:border-t-0 border-slate-200">
-                            <button onclick="approveSchedule(${item.id})" class="flex-1 md:flex-none px-3.5 py-2 ${checkData.hasConflict ? 'bg-slate-400' : 'bg-emerald-600 hover:bg-emerald-700'} text-white font-bold rounded-lg text-xs shadow flex items-center justify-center gap-1">
-                                <i class="fa-solid fa-check"></i> Duyệt
-                            </button>
-                            <button onclick="openRejectModal(${item.id}, '${checkData.hasConflict ? checkData.message.replace(/'/g, "\\'") : ''}')" class="flex-1 md:flex-none px-3 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg text-xs flex items-center justify-center gap-1 shadow">
-                                <i class="fa-solid fa-rotate-left"></i> Yêu cầu sửa
-                            </button>
-                        </div>
-                    `;
-                    container.appendChild(card);
-                }
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        async function approveSchedule(id) {
-            if (!confirm('Đồng chí có chắc muốn phê duyệt và ban hành lịch này?')) return;
-            try {
-                const res = await fetch(`/api/schedules/${id}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        status: 'approved',
-                        approved_by_name: currentUser ? currentUser.full_name : 'Bí thư'
-                    })
-                });
-                const data = await res.json();
-                if (!res.ok) {
-                    alert(data.error);
-                    loadPendingSchedules();
-                    return;
-                }
-                loadPendingSchedules();
-                loadUserNotifications();
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        function openRejectModal(id, defaultReason = '') {
-            document.getElementById('rejectScheduleId').value = id;
-            document.getElementById('rejectReasonInput').value = defaultReason ? `Trùng lịch: ${defaultReason}.` : '';
-            document.getElementById('rejectModal').classList.remove('hidden');
-        }
-
-        function closeRejectModal() {
-            document.getElementById('rejectModal').classList.add('hidden');
-        }
-
-        async function confirmRejectSchedule() {
-            const id = document.getElementById('rejectScheduleId').value;
-            const reason = document.getElementById('rejectReasonInput').value.trim();
-            if (!reason) {
-                alert('Vui lòng nhập lý do từ chối');
-                return;
-            }
-            try {
-                const res = await fetch(`/api/schedules/${id}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        status: 'rejected',
-                        reject_reason: reason,
-                        approved_by_name: currentUser ? currentUser.full_name : 'Bí thư'
-                    })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    closeRejectModal();
-                    loadPendingSchedules();
-                }
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        // ================= ADMIN USERS =================
-        async function loadUsersList() {
-            const tbody = document.getElementById('userTableBody');
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-slate-400 text-xs">Đang tải danh sách...</td></tr>';
-            try {
-                const res = await fetch('/api/users');
-                const users = await res.json();
-                usersList = users;
-                populateLeaderUsersSelect();
-                renderAttendeesTreeView();
-                populateGroupMemberCheckboxes();
-
-                tbody.innerHTML = '';
-                users.forEach(u => {
-                    const tr = document.createElement('tr');
-                    tr.className = 'hover:bg-slate-50';
-                    
-                    let roleDisplay = '';
-                    if (u.role === 'admin') {
-                        roleDisplay = '<span class="bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-[11px] font-bold">Admin</span>';
-                    } else if (u.can_approve === 1 || u.role === 'approver') {
-                        roleDisplay = '<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-[11px] font-bold">Duyệt lịch</span>';
-                    } else {
-                        roleDisplay = '<span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-[11px] font-semibold">Đăng ký lịch</span>';
-                    }
-
-                    tr.innerHTML = `
-                        <td class="p-2.5">
-                            <div class="font-bold text-slate-800">${u.full_name}</div>
-                            <div class="text-[11px] text-blue-700 font-semibold">${u.title || 'Cán bộ'}</div>
-                        </td>
-                        <td class="p-2.5 text-slate-700 text-xs">${u.department}</td>
-                        <td class="p-2.5 font-mono text-xs text-slate-600">${u.username}</td>
-                        <td class="p-2.5 text-center">${roleDisplay}</td>
-                        <td class="p-2.5 text-center">
-                            <label class="inline-flex items-center cursor-pointer">
-                                <input type="checkbox" ${u.can_approve ? 'checked' : ''} onchange="toggleApprovePermission(${u.id}, this.checked)" class="sr-only peer">
-                                <div class="w-8 h-4 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-600 relative"></div>
-                            </label>
-                        </td>
-                        <td class="p-2.5 text-right whitespace-nowrap">
-                            <div class="flex items-center justify-end gap-1">
-                                <button onclick='openEditUserModal(${JSON.stringify(u)})' class="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded text-xs font-semibold" title="Sửa">
-                                    <i class="fa-regular fa-pen-to-square"></i>
-                                </button>
-                                <button onclick="adminResetPassword(${u.id}, '${u.full_name}')" class="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded text-xs font-semibold" title="Reset MK">
-                                    <i class="fa-solid fa-rotate-left"></i>
-                                </button>
-                                ${u.username !== 'admin' ? `
-                                    <button onclick="deleteUser(${u.id})" class="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded cursor-pointer transition" title="Xóa tài khoản này">
-                                        <i class="fa-regular fa-trash-can pointer-events-none"></i>
-                                    </button>
-                                ` : ''}
-                            </div>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        async function toggleApprovePermission(userId, canApprove) {
-            try {
-                await fetch(`/api/users/${userId}/toggle-approve`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ can_approve: canApprove })
-                });
-                loadUsersList();
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        async function handleCreateUser(e) {
-            e.preventDefault();
-            const roleSelectVal = document.getElementById('newRoleSelect').value;
-            const canApproveVal = document.getElementById('newCanApprove').checked;
-
-            const payload = {
-                username: document.getElementById('newUsername').value.trim(),
-                password: document.getElementById('newPassword').value,
-                full_name: document.getElementById('newFullName').value.trim(),
-                title: document.getElementById('newTitle').value,
-                department: document.getElementById('newDepartment').value,
-                role: roleSelectVal,
-                can_approve: canApproveVal ? 1 : 0
-            };
-
-            if (!payload.title || !payload.department) {
-                alert('Vui lòng chọn Chức vụ và Ban!');
-                return;
             }
 
-            try {
-                const res = await fetch('/api/users', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                if (!res.ok) {
-                    alert(data.error);
-                    return;
-                }
-                alert('Tạo cán bộ thành công!');
-                await loadAllUsers();
-                loadUsersList();
-                e.target.reset();
-                document.getElementById('newPassword').value = '123456';
-                document.getElementById('newRoleSelect').value = 'staff';
-                document.getElementById('newCanApprove').checked = false;
-            } catch (err) {
-                console.error(err);
+            res.json({ success: true });
+        }
+    );
+});
+
+// ================= API THÔNG BÁO CÁ NHÂN =================
+function createNotificationsForSchedule(scheduleId, title, date, timeRange, location, chairpersonName, attendeesStr) {
+    db.all('SELECT id, full_name FROM users WHERE username != "admin"', (err, allUsers) => {
+        if (err || !allUsers) return;
+
+        allUsers.forEach(u => {
+            const isChairperson = chairpersonName && chairpersonName.includes(u.full_name);
+            const isAttendee = attendeesStr && attendeesStr.includes(u.full_name);
+
+            if (isChairperson || isAttendee) {
+                const roleInMeeting = isChairperson ? 'chairperson' : 'attendee';
+                const msg = isChairperson 
+                    ? `Đồng chí được phân công CHỦ TRÌ cuộc họp: "${title}"` 
+                    : `Đồng chí được TRIỆU TẬP tham dự cuộc họp: "${title}"`;
+
+                db.run(`INSERT INTO notifications (user_id, user_name, schedule_id, message, meeting_date, meeting_time, meeting_location, role_in_meeting)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [u.id, u.full_name, scheduleId, msg, date, timeRange, location, roleInMeeting]
+                );
             }
-        }
+        });
+    });
+}
 
-        async function deleteUser(id) {
-            const targetUser = (typeof usersList !== 'undefined' && usersList) ? usersList.find(u => String(u.id) === String(id)) : null;
-            const userName = targetUser ? targetUser.full_name : 'này';
-            if (!confirm(`Đồng chí có chắc chắn muốn xóa tài khoản "${userName}"?`)) return;
-            try {
-                const res = await fetch(`/api/users/${id}`, { 
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                const data = await res.json();
-                if (!res.ok) {
-                    alert(data.error || 'Lỗi: Không thể xóa tài khoản này!');
-                    return;
-                }
-                alert(`Đã xóa thành công tài khoản "${userName}"!`);
-                await loadAllUsers();
-                await loadUsersList();
-            } catch (err) {
-                console.error('Lỗi deleteUser:', err);
-                alert('Có lỗi kết nối khi gửi yêu cầu xóa tài khoản!');
-            }
-        }
+app.get('/api/notifications', (req, res) => {
+    const userId = Number(req.query.user_id);
+    const userName = req.query.user_name || '';
 
-        // ================= MANUAL LOGIN =================
-        function openLoginModal() {
-            document.getElementById('loginUsername').value = '';
-            document.getElementById('loginPassword').value = '';
-            document.getElementById('loginError').classList.add('hidden');
-            document.getElementById('loginModal').classList.remove('hidden');
-        }
-        function closeLoginModal() {
-            document.getElementById('loginModal').classList.add('hidden');
-        }
+    db.all('SELECT * FROM notifications WHERE (user_id = ? OR user_name = ?) ORDER BY id DESC LIMIT 20',
+        [userId, userName],
+        (err, rows) => res.json(rows || [])
+    );
+});
 
-        async function handleManualLogin(e) {
-            e.preventDefault();
-            const errBox = document.getElementById('loginError');
-            errBox.classList.add('hidden');
+app.patch('/api/notifications/mark-read', (req, res) => {
+    const userId = Number(req.body.user_id);
+    db.run('UPDATE notifications SET is_read = 1 WHERE user_id = ?', [userId], () => res.json({ success: true }));
+});
 
-            const u = document.getElementById('loginUsername').value.trim();
-            const p = document.getElementById('loginPassword').value;
+// Điều hướng trang chính
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
-            try {
-                const res = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: u, password: p })
-                });
-                const data = await res.json();
-                if (!res.ok) {
-                    errBox.innerText = data.error;
-                    errBox.classList.remove('hidden');
-                    return;
-                }
-                currentUser = data.user;
-                closeLoginModal();
-                applyUserRole();
-            } catch (err) {
-                console.error(err);
-            }
-        }
-    </script>
-</body>
-</html>
+// Khởi chạy Server
+app.listen(PORT, '0.0.0.0', () => {
+    console.log("==================================================");
+    console.log("HỆ THỐNG QUẢN LÝ LỊCH HỌP ĐOÀN THANH NIÊN ĐANG CHẠY!");
+    console.log(`* Cổng máy chủ: ${PORT}`);
+    console.log("==================================================");
+});
