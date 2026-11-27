@@ -1,5 +1,4 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -11,74 +10,68 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // KIỂM TRA MÔI TRƯỜNG: CLOUD (TURSO) HOẶC OFFLINE (SQLITE CỤC BỘ)
-// KIỂM TRA MÔI TRƯỜNG: CLOUD (TURSO) HOẶC OFFLINE (SQLITE CỤC BỘ)
 const isCloud = !!(process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN);
 
 let db;
 if (isCloud) {
     console.log("--> ĐANG KẾT NỐI DATABASE ĐÁM MÂY (TURSO CLOUD - LƯU TRỮ VĨNH VIỄN)...");
-    const { createClient } = require('@libsql/client/web');
+    const { createClient } = require('@libsql/client');
     
-    let dbUrl = process.env.TURSO_DATABASE_URL.trim();
+    let dbUrl = (process.env.TURSO_DATABASE_URL || '').trim();
     if (dbUrl.startsWith('libsql://')) {
         dbUrl = dbUrl.replace('libsql://', 'https://');
     }
 
     const client = createClient({
         url: dbUrl,
-        authToken: process.env.TURSO_AUTH_TOKEN.trim()
+        authToken: (process.env.TURSO_AUTH_TOKEN || '').trim()
     });
 
     db = {
-        all: async (sql, params, cb) => {
+        all: (sql, params, cb) => {
             if (typeof params === 'function') { cb = params; params = []; }
-            try {
-                const res = await client.execute({ sql, args: params || [] });
-                if (typeof cb === 'function') cb(null, res.rows);
-            } catch (err) {
-                console.error("Lỗi db.all:", err.message);
-                if (typeof cb === 'function') cb(err);
-            }
+            client.execute({ sql, args: params || [] })
+                .then(res => { if (typeof cb === 'function') cb(null, res.rows); })
+                .catch(err => {
+                    console.error("Lỗi db.all:", err.message);
+                    if (typeof cb === 'function') cb(err);
+                });
         },
-        get: async (sql, params, cb) => {
+        get: (sql, params, cb) => {
             if (typeof params === 'function') { cb = params; params = []; }
-            try {
-                const res = await client.execute({ sql, args: params || [] });
-                if (typeof cb === 'function') cb(null, res.rows[0] || null);
-            } catch (err) {
-                console.error("Lỗi db.get:", err.message);
-                if (typeof cb === 'function') cb(err);
-            }
+            client.execute({ sql, args: params || [] })
+                .then(res => { if (typeof cb === 'function') cb(null, res.rows[0] || null); })
+                .catch(err => {
+                    console.error("Lỗi db.get:", err.message);
+                    if (typeof cb === 'function') cb(err);
+                });
         },
-        run: async function(sql, params, cb) {
+        run: function(sql, params, cb) {
             if (typeof params === 'function') { cb = params; params = []; }
-            try {
-                const res = await client.execute({ sql, args: params || [] });
-                if (typeof cb === 'function') {
-                    cb.call({ lastID: Number(res.lastInsertRowid || 0), changes: res.rowsAffected }, null);
-                }
-            } catch (err) {
-                console.error("Lỗi db.run:", err.message);
-                if (typeof cb === 'function') cb(err);
-            }
+            client.execute({ sql, args: params || [] })
+                .then(res => {
+                    if (typeof cb === 'function') {
+                        cb.call({ lastID: Number(res.lastInsertRowid || 0), changes: res.rowsAffected }, null);
+                    }
+                })
+                .catch(err => {
+                    console.error("Lỗi db.run:", err.message);
+                    if (typeof cb === 'function') cb(err);
+                });
         },
-        prepare: (sql) => {
-            return {
-                run: (...args) => {
-                    const cb = typeof args[args.length - 1] === 'function' ? args.pop() : null;
-                    client.execute({ sql, args }).then(() => {
-                        if (typeof cb === 'function') cb(null);
-                    }).catch(e => {
-                        console.error("Lỗi prepare.run:", e.message);
-                        if (typeof cb === 'function') cb(e);
-                    });
-                },
-                finalize: () => {}
-            };
-        },
-        serialize: (fn) => {
-            if (typeof fn === 'function') fn();
-        }
+        prepare: (sql) => ({
+            run: (...args) => {
+                const cb = typeof args[args.length - 1] === 'function' ? args.pop() : null;
+                client.execute({ sql, args }).then(() => {
+                    if (typeof cb === 'function') cb(null);
+                }).catch(e => {
+                    console.error("Lỗi prepare.run:", e.message);
+                    if (typeof cb === 'function') cb(e);
+                });
+            },
+            finalize: () => {}
+        }),
+        serialize: (fn) => { if (typeof fn === 'function') fn(); }
     };
 } else {
     console.log("--> ĐANG CHẠY CƠ SỞ DỮ LIỆU CỤC BỘ TRÊN MÁY TÍNH (SQLITE)...");
@@ -87,46 +80,113 @@ if (isCloud) {
     db = new sqlite3.Database(dbFile);
 }
 
-    // Seed defaults
+// KHỞI TẠO BẢNG CƠ SỞ DỮ LIỆU
+function initDatabase() {
+    db.run(`CREATE TABLE IF NOT EXISTS departments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE NOT NULL
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS titles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE NOT NULL
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS locations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE NOT NULL
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS attendee_groups (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE NOT NULL,
+        member_ids TEXT NOT NULL
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        full_name TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'staff',
+        department TEXT NOT NULL,
+        title TEXT,
+        can_approve INTEGER DEFAULT 0
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS schedules (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        date TEXT NOT NULL,
+        start_time TEXT NOT NULL,
+        end_time TEXT NOT NULL,
+        location TEXT NOT NULL,
+        department TEXT NOT NULL,
+        chairperson TEXT NOT NULL,
+        chairperson_name TEXT,
+        attendees TEXT,
+        attendee_user_ids TEXT,
+        note TEXT,
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_by_name TEXT,
+        approved_by_name TEXT,
+        reject_reason TEXT
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS notifications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        user_name TEXT,
+        schedule_id INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        message TEXT NOT NULL,
+        meeting_date TEXT,
+        meeting_time TEXT,
+        meeting_location TEXT,
+        role_in_meeting TEXT,
+        is_read INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+
+    // DỮ LIỆU MẪU BAN ĐẦU
     db.get("SELECT COUNT(*) as count FROM departments", (err, row) => {
-        if (!err && row.count === 0) {
+        if (!err && row && (row.count === 0 || row.count === '0')) {
             const depts = ['Thường trực Đoàn trường', 'Văn phòng Đoàn trường', 'Ban Tuyên giáo', 'Ban Phong trào', 'Ban Tổ chức - Kiểm tra'];
-            const stmt = db.prepare(`INSERT INTO departments (name) VALUES (?)`);
-            depts.forEach(d => stmt.run(d));
-            stmt.finalize();
+            depts.forEach(d => db.run(`INSERT OR IGNORE INTO departments (name) VALUES (?)`, [d]));
         }
     });
 
     db.get("SELECT COUNT(*) as count FROM titles", (err, row) => {
-        if (!err && row.count === 0) {
+        if (!err && row && (row.count === 0 || row.count === '0')) {
             const defaultTitles = ['Bí thư Đoàn', 'Phó Bí thư Đoàn', 'Ủy viên Ban Thường vụ', 'Ủy viên Ban Chấp hành', 'Trưởng ban', 'Phó ban', 'Chánh Văn phòng Đoàn trường', 'Bí thư Chi đoàn', 'Cán bộ chuyên trách'];
-            const stmt = db.prepare(`INSERT INTO titles (name) VALUES (?)`);
-            defaultTitles.forEach(t => stmt.run(t));
-            stmt.finalize();
+            defaultTitles.forEach(t => db.run(`INSERT OR IGNORE INTO titles (name) VALUES (?)`, [t]));
         }
     });
 
     db.get("SELECT COUNT(*) as count FROM locations", (err, row) => {
-        if (!err && row.count === 0) {
+        if (!err && row && (row.count === 0 || row.count === '0')) {
             const defaultLocs = ['Hội trường lớn (Tầng 1 - 200 chỗ)', 'Phòng họp Ban Thường vụ (Tầng 2 - 30 chỗ)', 'Phòng họp Trực tuyến (Zoom/Teams)', 'Văn phòng Đoàn trường cơ sở', 'Sân đa năng'];
-            const stmt = db.prepare(`INSERT INTO locations (name) VALUES (?)`);
-            defaultLocs.forEach(l => stmt.run(l));
-            stmt.finalize();
+            defaultLocs.forEach(l => db.run(`INSERT OR IGNORE INTO locations (name) VALUES (?)`, [l]));
         }
     });
 
     db.get("SELECT COUNT(*) as count FROM users", (err, row) => {
-        if (!err && row.count === 0) {
-            const stmt = db.prepare(`INSERT INTO users (username, password, full_name, role, department, title, can_approve) VALUES (?, ?, ?, ?, ?, ?, ?)`);
-            stmt.run('admin', '123456', 'Quản trị viên Hệ thống', 'admin', 'Văn phòng Đoàn trường', 'Quản trị viên', 1);
-            stmt.run('bithu', '123456', 'Nguyễn Văn An', 'approver', 'Thường trực Đoàn trường', 'Bí thư Đoàn', 1);
-            stmt.run('phobithu', '123456', 'Trần Thị Bình', 'approver', 'Thường trực Đoàn trường', 'Phó Bí thư Đoàn', 1);
-            stmt.run('tuyengiao', '123456', 'Lê Hoàng Cường', 'staff', 'Ban Tuyên giáo', 'Trưởng ban', 0);
-            stmt.run('phongtrao', '123456', 'Phạm Minh Đức', 'staff', 'Ban Phong trào', 'Phó ban', 0);
-            stmt.finalize();
+        if (!err && row && (row.count === 0 || row.count === '0')) {
+            const defaultUsers = [
+                ['admin', '123456', 'Quản trị viên Hệ thống', 'admin', 'Văn phòng Đoàn trường', 'Quản trị viên', 1],
+                ['bithu', '123456', 'Nguyễn Văn An', 'approver', 'Thường trực Đoàn trường', 'Bí thư Đoàn', 1],
+                ['phobithu', '123456', 'Trần Thị Bình', 'approver', 'Thường trực Đoàn trường', 'Phó Bí thư Đoàn', 1],
+                ['tuyengiao', '123456', 'Lê Hoàng Cường', 'staff', 'Ban Tuyên giáo', 'Trưởng ban', 0],
+                ['phongtrao', '123456', 'Phạm Minh Đức', 'staff', 'Ban Phong trào', 'Phó ban', 0]
+            ];
+            defaultUsers.forEach(u => {
+                db.run(`INSERT OR IGNORE INTO users (username, password, full_name, role, department, title, can_approve) VALUES (?, ?, ?, ?, ?, ?, ?)`, u);
+            });
         }
     });
-});
+}
+
+initDatabase();
 
 // APIs
 app.get('/api/locations', (req, res) => {
@@ -250,7 +310,7 @@ app.post('/api/users/:id/reset-password', (req, res) => {
     });
 });
 
-// ADMIN UPDATE USER (Họ tên, Chức vụ, Ban, Vai trò, Quyền duyệt)
+// ADMIN UPDATE USER
 app.put('/api/users/:id', (req, res) => {
     const { id } = req.params;
     const { full_name, title, department, role, can_approve } = req.body;
@@ -329,7 +389,6 @@ function findLeaderConflicts(date, startTime, endTime, leaderName, excludeSchedu
     });
 }
 
-// Function to trigger notifications when a schedule is approved
 function notifyParticipantsOnApprove(schedule) {
     const { id, title, date, start_time, end_time, location, chairperson, chairperson_name, attendees } = schedule;
     const leaderName = extractPersonName(chairperson, chairperson_name);
@@ -337,30 +396,26 @@ function notifyParticipantsOnApprove(schedule) {
     db.all("SELECT id, full_name FROM users WHERE username != 'admin'", [], (err, users) => {
         if (err || !users) return;
 
-        const notifStmt = db.prepare(`INSERT INTO notifications 
-            (user_id, user_name, schedule_id, title, message, meeting_date, meeting_time, meeting_location, role_in_meeting)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
-
         users.forEach(u => {
             const uName = u.full_name.toLowerCase().trim();
 
-            // 1. Is Chairperson?
             if (leaderName && leaderName.toLowerCase().trim() === uName) {
                 const msg = `Lịch công tác "${title}" do bạn CHỦ TRÌ vào lúc ${start_time} - ${end_time} (${date}) tại "${location}" đã được phê duyệt ban hành!`;
-                notifStmt.run(u.id, u.full_name, id, title, msg, date, `${start_time} - ${end_time}`, location, 'chairperson');
+                db.run(`INSERT INTO notifications (user_id, user_name, schedule_id, title, message, meeting_date, meeting_time, meeting_location, role_in_meeting)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [u.id, u.full_name, id, title, msg, date, `${start_time} - ${end_time}`, location, 'chairperson']);
             } 
-            // 2. Is Attendee?
             else if (attendees && attendees.toLowerCase().includes(uName)) {
                 const msg = `Bạn được triệu tập THAM DỰ cuộc họp "${title}" vào lúc ${start_time} - ${end_time} (${date}) tại "${location}". Chủ trì: ${chairperson}.`;
-                notifStmt.run(u.id, u.full_name, id, title, msg, date, `${start_time} - ${end_time}`, location, 'attendee');
+                db.run(`INSERT INTO notifications (user_id, user_name, schedule_id, title, message, meeting_date, meeting_time, meeting_location, role_in_meeting)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [u.id, u.full_name, id, title, msg, date, `${start_time} - ${end_time}`, location, 'attendee']);
             }
         });
-
-        notifStmt.finalize();
     });
 }
 
-// NOTIFICATIONS API FOR CURRENT USER
+// NOTIFICATIONS API
 app.get('/api/notifications', (req, res) => {
     const { user_id, user_name } = req.query;
     if (!user_id && !user_name) return res.json([]);
@@ -391,7 +446,6 @@ app.post('/api/schedules', (req, res) => {
         return res.status(400).json({ error: 'Vui lòng điền đầy đủ các thông tin bắt buộc' });
     }
 
-    // Kiểm tra thời gian đăng ký không được trước thời gian hiện tại
     const meetingStart = new Date(`${date}T${start_time}:00`);
     const now = new Date();
     if (meetingStart < now) {
@@ -404,7 +458,6 @@ app.post('/api/schedules', (req, res) => {
 
     const leaderName = extractPersonName(chairperson, chairperson_name);
 
-    // Check Room Conflict
     const roomConflictQuery = `SELECT * FROM schedules 
         WHERE date = ? AND location = ? AND status = 'approved'
         AND ((start_time < ? AND end_time > ?) OR (start_time >= ? AND start_time < ?))`;
@@ -417,7 +470,6 @@ app.post('/api/schedules', (req, res) => {
             });
         }
 
-        // Check Leader Conflict
         findLeaderConflicts(date, start_time, end_time, leaderName, 0, (leaderErr, leaderConflict) => {
             if (leaderErr) return res.status(500).json({ error: 'Lỗi kiểm tra lịch người chủ trì' });
             if (leaderConflict) {
@@ -514,7 +566,6 @@ app.patch('/api/schedules/:id', (req, res) => {
                 db.run(query, [status, approved_by_name || 'Bí thư', reject_reason || '', id], function(uErr) {
                     if (uErr) return res.status(500).json({ error: 'Lỗi cập nhật lịch' });
 
-                    // TRIGGER NOTIFICATIONS TO PARTICIPANTS IMMEDIATELY UPON APPROVAL
                     notifyParticipantsOnApprove({
                         id: sched.id,
                         title: sched.title,
@@ -538,7 +589,6 @@ app.patch('/api/schedules/:id', (req, res) => {
         db.run(query, [status, approved_by_name || null, reject_reason || '', id], function(err) {
             if (err) return res.status(500).json({ error: 'Lỗi cập nhật lịch' });
 
-            // Thông báo cho người tạo khi bị yêu cầu sửa / từ chối
             db.get("SELECT * FROM schedules WHERE id = ?", [id], (sErr, sRow) => {
                 if (!sErr && sRow && sRow.created_by_name) {
                     db.get("SELECT id FROM users WHERE full_name = ?", [sRow.created_by_name], (uErr, uRow) => {
@@ -601,9 +651,9 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`=======================================================`);
     console.log(` HỆ THỐNG QUẢN LÝ LỊCH HỌP ĐOÀN THANH NIÊN ĐANG CHẠY!`);
     console.log(`=======================================================`);
-    console.log(`* Trên máy chủ này:      http://localhost:${PORT}`);
+    console.log(`* Trên máy chủ này:        http://localhost:${PORT}`);
     console.log(`* Máy khác trong mạng LAN: http://${localIp}:${PORT}`);
     console.log(`-------------------------------------------------------`);
-    console.log(`Truy cập bằng HTTP: http://localhost:${PORT}`);
+    console.log(`Truy cập bằng HTTP:        http://localhost:${PORT}`);
     console.log(`=======================================================`);
 });
