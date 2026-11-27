@@ -2730,7 +2730,7 @@
                                     <i class="fa-solid fa-rotate-left"></i>
                                 </button>
                                 ${u.username !== 'admin' ? `
-                                    <button onclick="deleteUser(${u.id}, '${u.full_name}')" class="p-1 text-red-500 hover:text-red-700">
+                                    <button onclick="deleteUser(${u.id}, ${JSON.stringify(u.full_name)})" class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded" title="Xóa tài khoản này">
                                         <i class="fa-regular fa-trash-can"></i>
                                     </button>
                                 ` : ''}
@@ -2803,11 +2803,18 @@
         async function deleteUser(id, name) {
             if (!confirm(`Đồng chí có chắc chắn muốn xóa tài khoản "${name}"?`)) return;
             try {
-                await fetch(`/api/users/${id}`, { method: 'DELETE' });
+                const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (!res.ok) {
+                    alert(data.error || 'Lỗi: Không thể xóa tài khoản này!');
+                    return;
+                }
+                alert(`Đã xóa thành công tài khoản "${name}"!`);
                 await loadAllUsers();
                 loadUsersList();
             } catch (err) {
-                console.error(err);
+                console.error('Lỗi deleteUser:', err);
+                alert('Có lỗi kết nối khi gửi yêu cầu xóa tài khoản!');
             }
         }
 
