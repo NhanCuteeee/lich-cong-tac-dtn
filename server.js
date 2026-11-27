@@ -627,7 +627,14 @@ app.patch('/api/users/:id/toggle-approve', (req, res) => {
 });
 
 app.delete('/api/users/:id', (req, res) => {
-    db.run('DELETE FROM users WHERE id = ? AND username != "admin"', [req.params.id], () => res.json({ success: true }));
+    const userId = Number(req.params.id);
+    db.run('DELETE FROM users WHERE id = ? AND username != "admin"', [userId], function(err) {
+        if (err) {
+            console.error("Lỗi xóa tài khoản:", err.message);
+            return res.status(500).json({ error: 'Lỗi xóa tài khoản' });
+        }
+        res.json({ success: true, changes: this ? this.changes : 1 });
+    });
 });
 
 function getLocalIp() {
