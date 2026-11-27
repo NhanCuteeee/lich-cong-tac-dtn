@@ -150,12 +150,12 @@
 
             <!-- Footer của Mobile Drawer -->
             <div class="p-3 border-t border-slate-200 bg-slate-50 space-y-2">
-                <div id="mobLoginSection">
+                <div id="mobLoginSection" style="display: block;">
                     <button onclick="openLoginModal(); toggleMobileMenu();" class="w-full py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold rounded-lg text-sm shadow flex items-center justify-center gap-2">
                         <i class="fa-solid fa-right-to-bracket"></i> Đăng nhập Cán bộ
                     </button>
                 </div>
-                <div id="mobUserSection" class="hidden space-y-2">
+                <div id="mobUserSection" style="display: none;" class="hidden space-y-2">
                     <div id="mobUserNameDisplay" class="text-xs font-bold text-slate-700 truncate px-1"></div>
                     <button onclick="openChangePasswordModal(); toggleMobileMenu();" class="w-full py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold rounded-lg text-xs flex items-center justify-center gap-1.5">
                         <i class="fa-solid fa-key text-amber-600"></i> Đổi mật khẩu
