@@ -24,33 +24,54 @@ if (isCloud) {
 
     db = {
         all: async (sql, params, cb) => {
+            if (typeof params === 'function') { cb = params; params = []; }
             try {
                 const res = await client.execute({ sql, args: params || [] });
-                cb(null, res.rows);
-            } catch (err) { cb(err); }
+                if (typeof cb === 'function') cb(null, res.rows);
+            } catch (err) { 
+                console.error("Lỗi db.all:", err.message);
+                if (typeof cb === 'function') cb(err); 
+            }
         },
         get: async (sql, params, cb) => {
+            if (typeof params === 'function') { cb = params; params = []; }
             try {
                 const res = await client.execute({ sql, args: params || [] });
-                cb(null, res.rows[0] || null);
-            } catch (err) { cb(err); }
+                if (typeof cb === 'function') cb(null, res.rows[0] || null);
+            } catch (err) { 
+                console.error("Lỗi db.get:", err.message);
+                if (typeof cb === 'function') cb(err); 
+            }
         },
         run: async function(sql, params, cb) {
+            if (typeof params === 'function') { cb = params; params = []; }
             try {
                 const res = await client.execute({ sql, args: params || [] });
-                if (cb) cb.call({ lastID: Number(res.lastInsertRowid || 0), changes: res.rowsAffected }, null);
-            } catch (err) { if (cb) cb(err); }
+                if (typeof cb === 'function') {
+                    cb.call({ lastID: Number(res.lastInsertRowid || 0), changes: res.rowsAffected }, null);
+                }
+            } catch (err) { 
+                console.error("Lỗi db.run:", err.message);
+                if (typeof cb === 'function') cb(err); 
+            }
         },
         prepare: (sql) => {
             return {
                 run: (...args) => {
                     const cb = typeof args[args.length - 1] === 'function' ? args.pop() : null;
-                    client.execute({ sql, args }).catch(e => console.error(e));
+                    client.execute({ sql, args }).then(() => {
+                        if (typeof cb === 'function') cb(null);
+                    }).catch(e => {
+                        console.error("Lỗi statement.run:", e.message);
+                        if (typeof cb === 'function') cb(e);
+                    });
                 },
                 finalize: () => {}
             };
         },
-        serialize: (fn) => fn()
+        serialize: (fn) => {
+            if (typeof fn === 'function') fn();
+        }
     };
 } else {
     console.log("--> ĐANG CHẠY CƠ SỞ DỮ LIỆU CỤC BỘ TRÊN MÁY TÍNH (SQLITE)...");
@@ -58,7 +79,6 @@ if (isCloud) {
     const dbFile = path.join(__dirname, 'youth_union.db');
     db = new sqlite3.Database(dbFile);
 }
-
 db.serialize(() => {
     // 1. Departments table
     db.run(`CREATE TABLE IF NOT EXISTS departments (
