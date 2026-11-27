@@ -11,12 +11,14 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // KIỂM TRA MÔI TRƯỜNG: CLOUD (TURSO) HOẶC OFFLINE (SQLITE CỤC BỘ)
+// KIỂM TRA MÔI TRƯỜNG: CLOUD (TURSO) HOẶC OFFLINE (SQLITE CỤC BỘ)
 const isCloud = !!(process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN);
 
 let db;
 if (isCloud) {
     console.log("--> ĐANG KẾT NỐI DATABASE ĐÁM MÂY (TURSO CLOUD - LƯU TRỮ VĨNH VIỄN)...");
-    const { createClient } = require('@libsql/client');
+    const { createClient } = require('@libsql/client/web');
+    
     let dbUrl = process.env.TURSO_DATABASE_URL.trim();
     if (dbUrl.startsWith('libsql://')) {
         dbUrl = dbUrl.replace('libsql://', 'https://');
@@ -33,9 +35,9 @@ if (isCloud) {
             try {
                 const res = await client.execute({ sql, args: params || [] });
                 if (typeof cb === 'function') cb(null, res.rows);
-            } catch (err) { 
+            } catch (err) {
                 console.error("Lỗi db.all:", err.message);
-                if (typeof cb === 'function') cb(err); 
+                if (typeof cb === 'function') cb(err);
             }
         },
         get: async (sql, params, cb) => {
@@ -43,9 +45,9 @@ if (isCloud) {
             try {
                 const res = await client.execute({ sql, args: params || [] });
                 if (typeof cb === 'function') cb(null, res.rows[0] || null);
-            } catch (err) { 
+            } catch (err) {
                 console.error("Lỗi db.get:", err.message);
-                if (typeof cb === 'function') cb(err); 
+                if (typeof cb === 'function') cb(err);
             }
         },
         run: async function(sql, params, cb) {
@@ -55,9 +57,9 @@ if (isCloud) {
                 if (typeof cb === 'function') {
                     cb.call({ lastID: Number(res.lastInsertRowid || 0), changes: res.rowsAffected }, null);
                 }
-            } catch (err) { 
+            } catch (err) {
                 console.error("Lỗi db.run:", err.message);
-                if (typeof cb === 'function') cb(err); 
+                if (typeof cb === 'function') cb(err);
             }
         },
         prepare: (sql) => {
@@ -67,7 +69,7 @@ if (isCloud) {
                     client.execute({ sql, args }).then(() => {
                         if (typeof cb === 'function') cb(null);
                     }).catch(e => {
-                        console.error("Lỗi statement.run:", e.message);
+                        console.error("Lỗi prepare.run:", e.message);
                         if (typeof cb === 'function') cb(e);
                     });
                 },
@@ -84,80 +86,6 @@ if (isCloud) {
     const dbFile = path.join(__dirname, 'youth_union.db');
     db = new sqlite3.Database(dbFile);
 }
-db.serialize(() => {
-    // 1. Departments table
-    db.run(`CREATE TABLE IF NOT EXISTS departments (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT UNIQUE NOT NULL
-    )`);
-
-    // 2. Titles table
-    db.run(`CREATE TABLE IF NOT EXISTS titles (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT UNIQUE NOT NULL
-    )`);
-
-    // 3. Locations table
-    db.run(`CREATE TABLE IF NOT EXISTS locations (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT UNIQUE NOT NULL
-    )`);
-
-    // 4. Attendee Groups table
-    db.run(`CREATE TABLE IF NOT EXISTS attendee_groups (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT UNIQUE NOT NULL,
-        member_ids TEXT NOT NULL
-    )`);
-
-    // 5. Users table
-    db.run(`CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL,
-        full_name TEXT NOT NULL,
-        role TEXT NOT NULL,
-        department TEXT NOT NULL,
-        title TEXT,
-        can_approve INTEGER DEFAULT 0
-    )`);
-
-    // 6. Schedules table
-    db.run(`CREATE TABLE IF NOT EXISTS schedules (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        date TEXT NOT NULL,
-        start_time TEXT NOT NULL,
-        end_time TEXT NOT NULL,
-        location TEXT NOT NULL,
-        department TEXT NOT NULL,
-        chairperson TEXT NOT NULL,
-        chairperson_name TEXT,
-        attendees TEXT NOT NULL,
-        attendee_user_ids TEXT,
-        note TEXT,
-        status TEXT DEFAULT 'pending',
-        created_by_name TEXT,
-        approved_by_name TEXT,
-        reject_reason TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
-
-    // 7. Notifications table
-    db.run(`CREATE TABLE IF NOT EXISTS notifications (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER,
-        user_name TEXT,
-        schedule_id INTEGER,
-        title TEXT,
-        message TEXT,
-        meeting_date TEXT,
-        meeting_time TEXT,
-        meeting_location TEXT,
-        role_in_meeting TEXT, -- 'chairperson' or 'attendee'
-        is_read INTEGER DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
 
     // Seed defaults
     db.get("SELECT COUNT(*) as count FROM departments", (err, row) => {
