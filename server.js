@@ -258,8 +258,8 @@ app.delete('/api/users/:id', (req, res) => {
         return res.status(400).json({ error: 'ID tài khoản không hợp lệ' });
     }
 
-    // Chạy câu lệnh xóa với tham số số nguyên chuẩn, chặn xóa tài khoản admin
-    db.run('DELETE FROM users WHERE id = ? AND username != "admin"', [numId], function(err) {
+    // Dùng dấu ngoặc đơn 'admin' để SQLite hiểu là chuỗi giá trị thay vì tên cột
+    db.run("DELETE FROM users WHERE id = ? AND username != 'admin'", [numId], function(err) {
         if (err) {
             console.error("Chi tiết lỗi xóa user từ DB:", err);
             return res.status(500).json({ error: 'Lỗi truy vấn cơ sở dữ liệu: ' + (err.message || err) });
