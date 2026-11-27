@@ -89,7 +89,7 @@
                 </div>
 
                 <!-- Nút Đăng nhập desktop -->
-                <div id="loginSection" class="hidden sm:block">
+                <div id="loginSection">
                     <button onclick="openLoginModal()" class="bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-3 py-1.5 rounded-lg text-xs sm:text-sm shadow transition flex items-center gap-1.5">
                         <i class="fa-solid fa-right-to-bracket"></i> <span>Đăng nhập</span>
                     </button>
@@ -2126,20 +2126,20 @@
 
             if (!currentUser) {
                 [btnReg, btnMySched, btnAppr, btnAdm, btnMobReg, btnMobMySched, btnMobAppr, btnMobAdm].forEach(b => { if (b) b.classList.add('hidden'); });
-                if (loginSec) loginSec.classList.remove('hidden');
-                if (userMenu) userMenu.classList.add('hidden');
-                if (mobLoginSec) mobLoginSec.classList.remove('hidden');
-                if (mobUserSec) mobUserSec.classList.add('hidden');
+                if (loginSec) loginSec.style.display = 'block';
+                if (userMenu) userMenu.style.display = 'none';
+                if (mobLoginSec) mobLoginSec.style.display = 'block';
+                if (mobUserSec) mobUserSec.style.display = 'none';
                 document.getElementById('notifBellWrapper').classList.add('hidden');
                 noticeText.innerText = "Chế độ xem công khai: Đoàn viên xem lịch họp đã duyệt mà không cần đăng nhập.";
                 navigateTab('calendar');
                 return;
             }
 
-            if (loginSec) loginSec.classList.add('hidden');
-            if (userMenu) userMenu.classList.remove('hidden');
-            if (mobLoginSec) mobLoginSec.classList.add('hidden');
-            if (mobUserSec) mobUserSec.classList.remove('hidden');
+            if (loginSec) loginSec.style.display = 'none';
+            if (userMenu) userMenu.style.display = 'flex';
+            if (mobLoginSec) mobLoginSec.style.display = 'none';
+            if (mobUserSec) mobUserSec.style.display = 'block';
             if (mobNameDisp) mobNameDisp.innerText = `Đ/c: ${currentUser.full_name} (${currentUser.title || 'Cán bộ'})`;
 
             [btnReg, btnMobReg, btnMySched, btnMobMySched].forEach(b => { if (b) b.classList.remove('hidden'); });
