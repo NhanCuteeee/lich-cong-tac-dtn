@@ -10,6 +10,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // KIỂM TRA MÔI TRƯỜNG: CLOUD (TURSO) HOẶC OFFLINE (SQLITE CỤC BỘ)
+// KIỂM TRA MÔI TRƯỜNG: CLOUD (TURSO) HOẶC OFFLINE (SQLITE CỤC BỘ)
 const isCloud = !!(process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN);
 
 let db;
@@ -17,14 +18,10 @@ if (isCloud) {
     console.log("--> ĐANG KẾT NỐI DATABASE ĐÁM MÂY (TURSO CLOUD - LƯU TRỮ VĨNH VIỄN)...");
     const { createClient } = require('@libsql/client');
     
-    let dbUrl = (process.env.TURSO_DATABASE_URL || '').trim();
-    if (dbUrl.startsWith('libsql://')) {
-        dbUrl = dbUrl.replace('libsql://', 'https://');
-    }
-
+    // Giữ nguyên URL libsql:// gốc được cấp từ Turso
     const client = createClient({
-        url: dbUrl,
-        authToken: (process.env.TURSO_AUTH_TOKEN || '').trim()
+        url: process.env.TURSO_DATABASE_URL.trim(),
+        authToken: process.env.TURSO_AUTH_TOKEN.trim()
     });
 
     db = {
@@ -79,7 +76,6 @@ if (isCloud) {
     const dbFile = path.join(__dirname, 'youth_union.db');
     db = new sqlite3.Database(dbFile);
 }
-
 // KHỞI TẠO BẢNG CƠ SỞ DỮ LIỆU
 function initDatabase() {
     db.run(`CREATE TABLE IF NOT EXISTS departments (
