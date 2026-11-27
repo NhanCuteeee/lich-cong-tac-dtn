@@ -17,9 +17,14 @@ let db;
 if (isCloud) {
     console.log("--> ĐANG KẾT NỐI DATABASE ĐÁM MÂY (TURSO CLOUD - LƯU TRỮ VĨNH VIỄN)...");
     const { createClient } = require('@libsql/client');
+    let dbUrl = process.env.TURSO_DATABASE_URL.trim();
+    if (dbUrl.startsWith('libsql://')) {
+        dbUrl = dbUrl.replace('libsql://', 'https://');
+    }
+
     const client = createClient({
-        url: process.env.TURSO_DATABASE_URL,
-        authToken: process.env.TURSO_AUTH_TOKEN
+        url: dbUrl,
+        authToken: process.env.TURSO_AUTH_TOKEN.trim()
     });
 
     db = {
