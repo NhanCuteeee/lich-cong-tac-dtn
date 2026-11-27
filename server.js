@@ -10,8 +10,54 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-const dbFile = path.join(__dirname, 'youth_union.db');
-const db = new sqlite3.Database(dbFile);
+// KIỂM TRA MÔI TRƯỜNG: CLOUD (TURSO) HOẶC OFFLINE (SQLITE CỤC BỘ)
+const isCloud = !!(process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN);
+
+let db;
+if (isCloud) {
+    console.log("--> ĐANG KẾT NỐI DATABASE ĐÁM MÂY (TURSO CLOUD - LƯU TRỮ VĨNH VIỄN)...");
+    const { createClient } = require('@libsql/client');
+    const client = createClient({
+        url: process.env.TURSO_DATABASE_URL,
+        authToken: process.env.TURSO_AUTH_TOKEN
+    });
+
+    db = {
+        all: async (sql, params, cb) => {
+            try {
+                const res = await client.execute({ sql, args: params || [] });
+                cb(null, res.rows);
+            } catch (err) { cb(err); }
+        },
+        get: async (sql, params, cb) => {
+            try {
+                const res = await client.execute({ sql, args: params || [] });
+                cb(null, res.rows[0] || null);
+            } catch (err) { cb(err); }
+        },
+        run: async function(sql, params, cb) {
+            try {
+                const res = await client.execute({ sql, args: params || [] });
+                if (cb) cb.call({ lastID: Number(res.lastInsertRowid || 0), changes: res.rowsAffected }, null);
+            } catch (err) { if (cb) cb(err); }
+        },
+        prepare: (sql) => {
+            return {
+                run: (...args) => {
+                    const cb = typeof args[args.length - 1] === 'function' ? args.pop() : null;
+                    client.execute({ sql, args }).catch(e => console.error(e));
+                },
+                finalize: () => {}
+            };
+        },
+        serialize: (fn) => fn()
+    };
+} else {
+    console.log("--> ĐANG CHẠY CƠ SỞ DỮ LIỆU CỤC BỘ TRÊN MÁY TÍNH (SQLITE)...");
+    const sqlite3 = require('sqlite3').verbose();
+    const dbFile = path.join(__dirname, 'youth_union.db');
+    db = new sqlite3.Database(dbFile);
+}
 
 db.serialize(() => {
     // 1. Departments table
