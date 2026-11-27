@@ -96,7 +96,7 @@
                 </div>
 
                 <!-- Nút Đổi MK / Đăng xuất desktop -->
-                <div id="userMenuSection" class="hidden sm:flex items-center gap-1.5">
+                <div id="userMenuSection" style="display: none;" class="flex items-center gap-1.5">
                     <button onclick="openChangePasswordModal()" title="Đổi mật khẩu" class="bg-white/10 hover:bg-white/20 text-white px-2 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1">
                         <i class="fa-solid fa-key text-amber-300"></i>
                     </button>
@@ -873,6 +873,7 @@
         let userNotifications = [];
 
         window.onload = async function() {
+            applyUserRole();
             setInitialDate();
             await loadDepartments();
             await loadTitles();
