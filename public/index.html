@@ -2730,8 +2730,8 @@
                                     <i class="fa-solid fa-rotate-left"></i>
                                 </button>
                                 ${u.username !== 'admin' ? `
-                                    <button onclick="deleteUser(${u.id}, ${JSON.stringify(u.full_name)})" class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded" title="Xóa tài khoản này">
-                                        <i class="fa-regular fa-trash-can"></i>
+                                    <button onclick="deleteUser(${u.id})" class="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded cursor-pointer transition" title="Xóa tài khoản này">
+                                        <i class="fa-regular fa-trash-can pointer-events-none"></i>
                                     </button>
                                 ` : ''}
                             </div>
@@ -2800,18 +2800,23 @@
             }
         }
 
-        async function deleteUser(id, name) {
-            if (!confirm(`Đồng chí có chắc chắn muốn xóa tài khoản "${name}"?`)) return;
+        async function deleteUser(id) {
+            const targetUser = (typeof usersList !== 'undefined' && usersList) ? usersList.find(u => String(u.id) === String(id)) : null;
+            const userName = targetUser ? targetUser.full_name : 'này';
+            if (!confirm(`Đồng chí có chắc chắn muốn xóa tài khoản "${userName}"?`)) return;
             try {
-                const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
+                const res = await fetch(`/api/users/${id}`, { 
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' }
+                });
                 const data = await res.json();
                 if (!res.ok) {
                     alert(data.error || 'Lỗi: Không thể xóa tài khoản này!');
                     return;
                 }
-                alert(`Đã xóa thành công tài khoản "${name}"!`);
+                alert(`Đã xóa thành công tài khoản "${userName}"!`);
                 await loadAllUsers();
-                loadUsersList();
+                await loadUsersList();
             } catch (err) {
                 console.error('Lỗi deleteUser:', err);
                 alert('Có lỗi kết nối khi gửi yêu cầu xóa tài khoản!');
